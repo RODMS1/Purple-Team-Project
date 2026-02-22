@@ -1,7 +1,7 @@
 # Red Team (Black box):
 
 RTO1: Network Enumeration
-● Discover hosts, services, and exposed applications
+● Discover hosts, services, and exposed applications\n
 ● Document tools and techniques used
 ● Create a network topology diagram
 
