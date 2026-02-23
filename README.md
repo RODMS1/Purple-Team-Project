@@ -8,8 +8,8 @@ Simulate external attacker with initial internal foothold. Focus: attacker behav
 
 ## Phases
 
-- **Phase 1 – Red Team (Black Box)**: 1 week  
-- **Phase 2 – SOC Visibility & Detection Engineering**: 2 weeks
+- **Phase 1 – Red Team (Black Box)**  
+- **Phase 2 – SOC Visibility & Detection Engineering**
 
 ## Scope
 
