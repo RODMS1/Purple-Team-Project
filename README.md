@@ -52,4 +52,4 @@ Follow AWS Penetration Testing Policy.
 - Document visible vs. blind activity + log sources + queries  
 - Explain gaps explicitly
 
-
+## Phase 3 -
