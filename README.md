@@ -1,29 +1,68 @@
-# CyberCore Purple Team Security Exercise
+# ICC-003 — Purple Team Security Exercise
 
-Purple Team simulation: execute offensive actions first, then analyze detection visibility in SOC logs.
+**Team:** The Bugs
+**Environment:** CyberCore · corp.org · AWS · `10.0.0.0/24`
+**Result:** Full Domain Compromise — CRITICAL
 
-## Overview
+Purple team simulation: Red Team executes a black-box engagement, then Blue Team analyzes telemetry to assess detection coverage and identify blind spots.
 
-Simulate external attacker with initial internal foothold. Focus: attacker behavior in logs, detection successes, and blind spots. No IR/prevention.
+---
 
-## Phases
+## Quick Navigation
 
-- **Phase 1 – Red Team (Black Box)**  
-- **Phase 2 – SOC Visibility & Detection Engineering**
+| Section | Description |
+|---------|-------------|
+| [red-team/](red-team/) | Phase 1 — offensive operations, tools, findings |
+| [blue-team/](blue-team/) | Phase 2 — detection engineering, event analysis, MITRE mapping |
+| [purple-team/](purple-team/) | Combined synthesis, kill chain, remediation priorities |
+| [docs/](docs/) | Assignment brief (ICC-003 PDF) |
 
-## Scope
+---
 
-**In-scope**: 10.0.0.0/24  
+## Exercise Overview
 
-**Out-of-scope (do NOT target)**:  
-- 10.0.0.23  
-- 10.0.0.100  
-- 10.0.0.200  
-- 10.0.0.176
+| Field | Value |
+|-------|-------|
+| **Type** | Purple Team (Red executes → Blue analyzes) |
+| **Scope** | `10.0.0.0/24` |
+| **Initial Access** | `10.0.0.219` (credentials provided separately) |
+| **Result** | Full Active Directory domain compromise |
+| **Overall Risk** | CRITICAL |
 
-**Initial access**: 10.0.0.219 (credentials provided separately)  
+**Out-of-scope hosts (do not target):** `10.0.0.23` · `10.0.0.100` · `10.0.0.200` · `10.0.0.176`
 
-## Rules of Engagement – Prohibited
+---
+
+## Phase 1 — Red Team
+
+Objectives: Network enumeration, vulnerability discovery, custom tooling, exploitation + lateral movement.
+
+**Key outcomes:**
+- 6 of 9 in-scope hosts affected
+- 2 critical, 2 high, 3 medium vulnerabilities discovered
+- Full Domain Administrator access achieved via: **FTP credential theft → RDP → LSASS dump → hash crack**
+- Independent RCE via **Apache CVE-2021-41773** (CVSS 9.8)
+- Custom scanner tool built and deployed ([pentest_scanner.py](red-team/tools/pentest_scanner.py))
+
+See [red-team/](red-team/) for full details.
+
+---
+
+## Phase 2 — Blue Team
+
+Objectives: Analyze Phase 1 telemetry, map to MITRE ATT&CK, identify detection gaps.
+
+**Key outcomes:**
+- 4 Windows Events detected: `1102` · `4625` · `4624` · `1149`
+- FTP credential exfiltration and Apache RCE captured in PCAP
+- 43% of attack techniques detected (6 of 14)
+- Critical gap: LSASS dump (highest-impact action) generated **zero detectable events**
+
+See [blue-team/](blue-team/) for full details and [blue-team/dashboard/](blue-team/dashboard/) for the interactive IR dashboard.
+
+---
+
+## Rules of Engagement — Prohibited
 
 - DoS  
 - RDP brute-force  
@@ -51,4 +90,4 @@ Follow AWS Penetration Testing Policy.
 - Document visible vs. blind activity + log sources + queries  
 - Explain gaps explicitly
 
-## Phase 3 -
+
