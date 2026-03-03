@@ -1,0 +1,1527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ICC-003 · THE BUGS · Op Dashboard</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;600;700&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+:root {
+  --bg: #030810;
+  --surface: #070f1c;
+  --surface2: #0b1628;
+  --surface3: #0f1e35;
+  --border: #112240;
+  --border2: #1a3355;
+  --blue: #1e90ff;
+  --blue-bright: #5ab4ff;
+  --blue-dim: #0d5fcc;
+  --cyan: #00e5ff;
+  --teal: #00b4d8;
+  --red: #ff4060;
+  --red-dim: #cc1833;
+  --red-bright: #ff7090;
+  --orange: #ff8800;
+  --yellow: #ffc300;
+  --green: #00e676;
+  --purple: #b06fff;
+  --text: #c0d8f0;
+  --text-dim: #7090b0;
+  --text-faint: #3a5570;
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'DM Sans', sans-serif;
+  --display: 'Syne', sans-serif;
+  --team-primary: #1e90ff;
+  --team-secondary: #00e5ff;
+  --team-glow: rgba(30,144,255,0.07);
+  --team-accent: rgba(30,144,255,0.15);
+  --team-border: rgba(30,144,255,0.3);
+}
+body.red-mode {
+  --team-primary: #ff4060;
+  --team-secondary: #ff7090;
+  --team-glow: rgba(255,64,96,0.06);
+  --team-accent: rgba(255,64,96,0.12);
+  --team-border: rgba(255,64,96,0.3);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  min-height: 100vh;
+  overflow-x: hidden;
+  transition: all 0.4s ease;
+}
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(var(--team-glow) 1px, transparent 1px),
+    linear-gradient(90deg, var(--team-glow) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none; z-index: 0;
+  transition: all 0.4s;
+}
+body::after {
+  content: '';
+  position: fixed;
+  top: -200px; left: 50%;
+  transform: translateX(-50%);
+  width: 900px; height: 600px;
+  background: radial-gradient(ellipse, var(--team-glow) 0%, transparent 70%);
+  pointer-events: none; z-index: 0;
+  transition: all 0.4s;
+}
+.page { position: relative; z-index: 1; }
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 32px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(7,15,28,0.9);
+  backdrop-filter: blur(16px);
+  position: sticky; top: 0; z-index: 200;
+  transition: border-color 0.4s;
+}
+.topbar-left { display: flex; align-items: center; gap: 14px; }
+.shield-icon {
+  width: 36px; height: 36px;
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  transition: all 0.4s;
+  background: linear-gradient(135deg, var(--team-primary), var(--team-secondary));
+}
+.topbar-brand {
+  display: flex; flex-direction: column; gap: 2px;
+}
+.topbar-title {
+  font-family: var(--display);
+  font-size: 15px; font-weight: 800;
+  color: #fff; letter-spacing: 0.5px;
+  transition: color 0.3s;
+}
+.topbar-sub {
+  font-family: var(--mono);
+  font-size: 10px; color: var(--text-dim);
+  letter-spacing: 1.2px;
+}
+.topbar-right { display: flex; align-items: center; gap: 16px; }
+.team-toggle {
+  display: flex;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 3px;
+  gap: 3px;
+}
+.team-btn {
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  padding: 7px 18px; border-radius: 7px;
+  border: none; cursor: pointer;
+  transition: all 0.25s;
+  background: transparent;
+  color: var(--text-dim);
+}
+.team-btn.blue-btn.active {
+  background: rgba(30,144,255,0.15);
+  color: var(--blue-bright);
+  box-shadow: 0 0 20px rgba(30,144,255,0.2);
+}
+.team-btn.red-btn.active {
+  background: rgba(255,64,96,0.15);
+  color: var(--red-bright);
+  box-shadow: 0 0 20px rgba(255,64,96,0.2);
+}
+.team-btn:hover:not(.active) { color: var(--text); background: rgba(255,255,255,0.04); }
+.live-indicator {
+  display: flex; align-items: center; gap: 6px;
+  font-family: var(--mono); font-size: 11px;
+  color: var(--team-primary);
+  transition: color 0.4s;
+}
+.live-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--team-primary);
+  animation: pulse 1.2s infinite;
+  transition: background 0.4s;
+}
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
+.timestamp { font-family: var(--mono); font-size: 11px; color: var(--text-faint); }
+.main { padding: 32px 32px 80px; max-width: 1240px; margin: 0 auto; }
+.team-panel { display: none; }
+.team-panel.active { display: block; animation: fadePanel 0.4s ease both; }
+@keyframes fadePanel { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.hero-alert {
+  border-radius: 14px; padding: 24px 28px;
+  margin-bottom: 32px;
+  display: flex; align-items: center; gap: 20px;
+  animation: slideDown 0.5s ease both;
+}
+.hero-alert.blue-alert {
+  background: linear-gradient(135deg, rgba(30,144,255,0.1) 0%, rgba(11,22,40,0) 60%);
+  border: 1px solid rgba(30,144,255,0.25);
+  border-left: 4px solid var(--blue);
+}
+.hero-alert.red-alert {
+  background: linear-gradient(135deg, rgba(255,64,96,0.12) 0%, rgba(11,22,40,0) 60%);
+  border: 1px solid rgba(255,64,96,0.25);
+  border-left: 4px solid var(--red);
+}
+@keyframes slideDown { from{opacity:0;transform:translateY(-16px)} to{opacity:1;transform:translateY(0)} }
+.alert-icon { font-size: 34px; flex-shrink: 0; }
+.alert-text h2 {
+  font-family: var(--display);
+  font-size: 19px; font-weight: 800;
+  margin-bottom: 5px;
+}
+.blue-alert .alert-text h2 { color: var(--blue-bright); }
+.red-alert .alert-text h2 { color: var(--red); }
+.alert-text p { font-size: 13px; color: var(--text-dim); line-height: 1.6; }
+.alert-badge {
+  margin-left: auto; flex-shrink: 0;
+  border-radius: 10px; padding: 10px 18px; text-align: center;
+}
+.blue-alert .alert-badge { background: rgba(30,144,255,0.1); border: 1px solid rgba(30,144,255,0.3); }
+.red-alert .alert-badge { background: rgba(255,64,96,0.1); border: 1px solid rgba(255,64,96,0.3); }
+.badge-label { font-family: var(--mono); font-size: 9px; color: var(--text-dim); letter-spacing: 2px; display: block; margin-bottom: 4px; }
+.badge-value { font-family: var(--display); font-size: 22px; font-weight: 800; }
+.blue-alert .badge-value { color: var(--blue-bright); }
+.red-alert .badge-value { color: var(--red); }
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 16px; margin-bottom: 32px;
+}
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px; padding: 20px;
+  position: relative; overflow: hidden;
+  animation: fadeUp 0.5s ease both;
+  transition: border-color 0.2s, transform 0.2s;
+  cursor: default;
+}
+.stat-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+.stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+.stat-card.c-critical::before { background: var(--red); }
+.stat-card.c-high::before { background: var(--orange); }
+.stat-card.c-medium::before { background: var(--yellow); }
+.stat-card.c-info::before { background: var(--blue); }
+.stat-card.c-done::before { background: var(--green); }
+.stat-card.c-purple::before { background: var(--purple); }
+@keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+.stat-card:nth-child(1){animation-delay:.05s}.stat-card:nth-child(2){animation-delay:.1s}
+.stat-card:nth-child(3){animation-delay:.15s}.stat-card:nth-child(4){animation-delay:.2s}
+.stat-card:nth-child(5){animation-delay:.25s}
+.stat-label { font-family: var(--mono); font-size: 10px; color: var(--text-dim); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
+.stat-value { font-family: var(--display); font-size: 36px; font-weight: 800; line-height: 1; }
+.stat-value.red { color: var(--red); }
+.stat-value.orange { color: var(--orange); }
+.stat-value.yellow { color: var(--yellow); }
+.stat-value.blue { color: var(--blue-bright); }
+.stat-value.green { color: var(--green); }
+.stat-value.purple { color: var(--purple); }
+.stat-sub { font-size: 11px; color: var(--text-faint); margin-top: 4px; }
+.section-header {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 16px; margin-top: 36px;
+}
+.section-title {
+  font-family: var(--display);
+  font-size: 16px; font-weight: 700;
+  color: #fff; letter-spacing: 0.3px; white-space: nowrap;
+}
+.section-line { flex: 1; height: 1px; background: linear-gradient(90deg, var(--border2), transparent); }
+.section-badge {
+  font-family: var(--mono); font-size: 10px;
+  padding: 2px 8px; border-radius: 4px; white-space: nowrap;
+}
+.section-badge.blue-badge { color: var(--blue-bright); background: rgba(30,144,255,0.1); border: 1px solid rgba(30,144,255,0.2); }
+.section-badge.red-badge { color: var(--red-bright); background: rgba(255,64,96,0.1); border: 1px solid rgba(255,64,96,0.2); }
+.timeline { position: relative; padding-left: 32px; }
+.timeline::before {
+  content: '';
+  position: absolute; left: 10px; top: 0; bottom: 0; width: 2px;
+  background: linear-gradient(180deg, var(--red) 0%, rgba(255,64,96,0.1) 100%);
+}
+.tl-item {
+  position: relative; margin-bottom: 0;
+  animation: fadeUp 0.4s ease both;
+}
+.tl-item:nth-child(1){animation-delay:.05s}.tl-item:nth-child(2){animation-delay:.1s}
+.tl-item:nth-child(3){animation-delay:.15s}.tl-item:nth-child(4){animation-delay:.2s}
+.tl-item:nth-child(5){animation-delay:.25s}.tl-item:nth-child(6){animation-delay:.3s}
+.tl-dot {
+  position: absolute; left: -27px; top: 20px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--bg);
+  border: 2px solid var(--red);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 7px; color: var(--red);
+  z-index: 1;
+}
+.tl-dot.exploited { background: var(--red); color: #fff; border-color: var(--red); box-shadow: 0 0 12px rgba(255,64,96,0.5); }
+.tl-dot.found { background: var(--orange); border-color: var(--orange); box-shadow: 0 0 8px rgba(255,136,0,0.4); }
+.tl-dot.pending { background: var(--surface2); border-color: var(--text-faint); }
+.tl-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px; padding: 18px 20px;
+  margin-bottom: 12px;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.tl-card:hover { border-color: rgba(255,64,96,0.25); transform: translateX(3px); }
+.tl-card.critical-card { border-left: 3px solid var(--red); }
+.tl-card.high-card { border-left: 3px solid var(--orange); }
+.tl-card.medium-card { border-left: 3px solid var(--yellow); }
+.tl-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.tl-step {
+  font-family: var(--mono); font-size: 9px; font-weight: 700;
+  color: var(--red); background: rgba(255,64,96,0.1);
+  border: 1px solid rgba(255,64,96,0.25);
+  padding: 2px 8px; border-radius: 4px; letter-spacing: 1px;
+}
+.tl-title { font-size: 14px; font-weight: 600; color: var(--text); }
+.tl-body { font-size: 12px; color: var(--text-dim); line-height: 1.6; margin-bottom: 10px; }
+.tl-evidence {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--border);
+  border-radius: 6px; padding: 10px 14px;
+  font-family: var(--mono); font-size: 11px; color: var(--green);
+  line-height: 1.5; margin-top: 8px;
+}
+.tl-evidence .ev-label {
+  font-size: 9px; color: var(--text-faint);
+  letter-spacing: 1.5px; text-transform: uppercase;
+  display: block; margin-bottom: 4px;
+}
+.cred-table {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px; overflow: hidden;
+  margin-bottom: 0;
+}
+.cred-table table { width: 100%; border-collapse: collapse; }
+.cred-table thead tr { background: var(--surface2); border-bottom: 1px solid var(--border); }
+.cred-table th {
+  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  color: var(--text-dim); letter-spacing: 1.5px; text-transform: uppercase;
+  padding: 12px 16px; text-align: left;
+}
+.cred-table tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
+.cred-table tbody tr:last-child { border-bottom: none; }
+.cred-table tbody tr:hover { background: rgba(255,64,96,0.03); }
+.cred-table td { padding: 12px 16px; font-size: 13px; vertical-align: middle; }
+.cred-ip { font-family: var(--mono); color: var(--red-bright); font-size: 12px; }
+.cred-user { font-family: var(--mono); color: var(--cyan); font-size: 12px; }
+.cred-pass { font-family: var(--mono); color: var(--yellow); font-size: 12px; }
+.cred-method {
+  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  padding: 2px 8px; border-radius: 4px; text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.cred-method.ftp { color: var(--orange); background: rgba(255,136,0,0.1); border: 1px solid rgba(255,136,0,0.25); }
+.cred-method.rdp { color: var(--red-bright); background: rgba(255,64,96,0.1); border: 1px solid rgba(255,64,96,0.25); }
+.cred-method.lsass { color: var(--purple); background: rgba(176,111,255,0.1); border: 1px solid rgba(176,111,255,0.25); }
+.cred-method.brute { color: var(--yellow); background: rgba(255,195,0,0.08); border: 1px solid rgba(255,195,0,0.2); }
+.vuln-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+.vuln-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 18px;
+  transition: border-color 0.2s, transform 0.2s;
+  animation: fadeUp 0.4s ease both;
+}
+.vuln-card:hover { transform: translateY(-2px); }
+.vuln-card.exploited-card { border-color: rgba(255,64,96,0.2); }
+.vuln-card.exploited-card:hover { border-color: rgba(255,64,96,0.4); }
+.vuln-card.confirmed-card { border-color: rgba(255,136,0,0.15); }
+.vuln-card.pending-card { border-color: rgba(255,195,0,0.1); }
+.vuln-top { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.vuln-sev {
+  font-family: var(--mono); font-size: 9px; font-weight: 600;
+  padding: 2px 8px; border-radius: 4px; letter-spacing: 1px; text-transform: uppercase;
+}
+.vuln-sev.critical { background: rgba(255,64,96,0.15); color: var(--red); border: 1px solid rgba(255,64,96,0.3); }
+.vuln-sev.high { background: rgba(255,136,0,0.12); color: var(--orange); border: 1px solid rgba(255,136,0,0.3); }
+.vuln-sev.medium { background: rgba(255,195,0,0.08); color: var(--yellow); border: 1px solid rgba(255,195,0,0.25); }
+.vuln-status {
+  font-family: var(--mono); font-size: 9px; font-weight: 600;
+  padding: 2px 8px; border-radius: 4px; letter-spacing: 1px; text-transform: uppercase;
+  margin-left: auto;
+}
+.vuln-status.exploited { color: var(--red); background: rgba(255,64,96,0.08); border: 1px solid rgba(255,64,96,0.2); }
+.vuln-status.confirmed { color: var(--orange); background: rgba(255,136,0,0.08); border: 1px solid rgba(255,136,0,0.2); }
+.vuln-status.pending { color: var(--text-faint); background: rgba(255,255,255,0.02); border: 1px solid var(--border); }
+.vuln-name { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.vuln-cve { font-family: var(--mono); font-size: 11px; color: var(--red-bright); margin-bottom: 8px; }
+.vuln-host { font-family: var(--mono); font-size: 11px; color: var(--teal); }
+.vuln-desc { font-size: 12px; color: var(--text-dim); line-height: 1.5; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+.tool-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px 16px;
+  display: flex; align-items: center; gap: 12px;
+  transition: border-color 0.2s;
+  animation: fadeUp 0.4s ease both;
+}
+.tool-card:hover { border-color: rgba(255,64,96,0.2); }
+.tool-icon {
+  width: 34px; height: 34px; border-radius: 8px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+}
+.tool-icon.recon { background: rgba(30,144,255,0.1); }
+.tool-icon.exploit { background: rgba(255,64,96,0.1); }
+.tool-icon.post { background: rgba(176,111,255,0.1); }
+.tool-icon.crack { background: rgba(255,195,0,0.08); }
+.tool-icon.enum { background: rgba(0,230,118,0.08); }
+.tool-name { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--text); }
+.tool-desc { font-size: 11px; color: var(--text-faint); margin-top: 2px; }
+.attack-path {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 0; padding: 20px 0;
+}
+.ap-step {
+  display: flex; align-items: center; gap: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px 20px;
+  width: 100%; max-width: 560px;
+  transition: border-color 0.2s, transform 0.2s;
+  animation: fadeUp 0.4s ease both;
+  position: relative;
+}
+.ap-step:nth-child(1){animation-delay:.05s}.ap-step:nth-child(3){animation-delay:.1s}
+.ap-step:nth-child(5){animation-delay:.15s}.ap-step:nth-child(7){animation-delay:.2s}
+.ap-step:nth-child(9){animation-delay:.25s}.ap-step:nth-child(11){animation-delay:.3s}
+.ap-step:hover { border-color: rgba(255,64,96,0.25); transform: scale(1.01); }
+.ap-step.initial { border-color: rgba(255,136,0,0.2); }
+.ap-step.critical-step { border-color: rgba(255,64,96,0.3); }
+.ap-step.final-step {
+  border-color: rgba(255,64,96,0.5);
+  background: rgba(255,64,96,0.05);
+  box-shadow: 0 0 30px rgba(255,64,96,0.1);
+}
+.ap-num {
+  width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 11px; font-weight: 700;
+}
+.ap-step.initial .ap-num { background: rgba(255,136,0,0.15); color: var(--orange); border: 1px solid rgba(255,136,0,0.3); }
+.ap-step.critical-step .ap-num { background: rgba(255,64,96,0.15); color: var(--red); border: 1px solid rgba(255,64,96,0.3); }
+.ap-step.final-step .ap-num { background: var(--red); color: #fff; box-shadow: 0 0 12px rgba(255,64,96,0.4); }
+.ap-content { flex: 1; }
+.ap-title { font-size: 13px; font-weight: 600; color: var(--text); }
+.ap-detail { font-size: 11px; color: var(--text-dim); margin-top: 2px; font-family: var(--mono); }
+.ap-host { font-family: var(--mono); font-size: 10px; color: var(--teal); }
+.ap-tag {
+  font-family: var(--mono); font-size: 9px;
+  padding: 2px 7px; border-radius: 4px; letter-spacing: 0.5px; text-transform: uppercase;
+  flex-shrink: 0;
+}
+.ap-tag.rdp { color: var(--red-bright); background: rgba(255,64,96,0.1); border: 1px solid rgba(255,64,96,0.2); }
+.ap-tag.ftp { color: var(--orange); background: rgba(255,136,0,0.08); border: 1px solid rgba(255,136,0,0.2); }
+.ap-tag.smb { color: var(--purple); background: rgba(176,111,255,0.1); border: 1px solid rgba(176,111,255,0.2); }
+.ap-tag.rce { color: var(--red); background: rgba(255,64,96,0.12); border: 1px solid rgba(255,64,96,0.25); }
+.ap-tag.ad { color: var(--yellow); background: rgba(255,195,0,0.08); border: 1px solid rgba(255,195,0,0.2); }
+.ap-arrow {
+  display: flex; justify-content: center; align-items: center;
+  height: 28px; color: var(--red); font-size: 18px; opacity: 0.5;
+}
+.mitre-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+.mitre-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px;
+  transition: border-color 0.2s;
+}
+.mitre-card:hover { border-color: var(--border2); }
+.mitre-phase {
+  font-family: var(--mono); font-size: 9px;
+  letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px;
+}
+.mitre-phase.blue { color: var(--blue-bright); }
+.mitre-phase.red { color: var(--red-bright); }
+.mitre-technique { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+.mitre-id { font-family: var(--mono); font-size: 11px; color: var(--text-faint); }
+.mitre-detail {
+  margin-top: 10px; font-size: 11px; color: var(--text-dim);
+  padding-top: 10px; border-top: 1px solid var(--border); line-height: 1.5;
+}
+.mitre-detail strong { font-weight: 500; }
+.mitre-detail strong.blue { color: var(--cyan); }
+.mitre-detail strong.red { color: var(--red-bright); }
+.task-list { display: flex; flex-direction: column; gap: 10px; }
+.task-item {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 20px;
+  display: flex; align-items: flex-start; gap: 14px;
+  cursor: pointer; transition: all 0.2s;
+  animation: fadeUp 0.4s ease both;
+  position: relative; overflow: hidden;
+}
+.task-item::after {
+  content: ''; position: absolute; inset: 0;
+  background: rgba(30,144,255,0.04); opacity: 0; transition: opacity 0.2s;
+}
+.task-item:hover { border-color: var(--border2); }
+.task-item:hover::after { opacity: 1; }
+.task-item.done { border-color: rgba(0,230,118,0.2); background: rgba(0,230,118,0.03); opacity: 0.7; }
+.task-item.done .task-title { text-decoration: line-through; color: var(--text-faint); }
+.task-item:nth-child(1){animation-delay:.05s}.task-item:nth-child(2){animation-delay:.1s}
+.task-item:nth-child(3){animation-delay:.15s}.task-item:nth-child(4){animation-delay:.2s}
+.task-item:nth-child(5){animation-delay:.25s}.task-item:nth-child(6){animation-delay:.3s}
+.task-item:nth-child(7){animation-delay:.35s}
+.task-check {
+  width: 22px; height: 22px; flex-shrink: 0;
+  border: 2px solid var(--border2); border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s; margin-top: 1px; background: transparent; cursor: pointer;
+}
+.task-item.done .task-check { background: var(--green); border-color: var(--green); color: #000; }
+.task-check-mark { display: none; font-size: 13px; font-weight: 700; }
+.task-item.done .task-check-mark { display: block; }
+.task-body { flex: 1; min-width: 0; }
+.task-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+.task-title { font-size: 14px; font-weight: 500; color: var(--text); }
+.task-meta { display: flex; gap: 6px; align-items: center; }
+.sev-badge {
+  font-family: var(--mono); font-size: 9px; font-weight: 600;
+  padding: 2px 8px; border-radius: 4px; letter-spacing: 1px; text-transform: uppercase; flex-shrink: 0;
+}
+.sev-badge.critical { background: rgba(255,64,96,0.15); color: var(--red); border: 1px solid rgba(255,64,96,0.3); }
+.sev-badge.high { background: rgba(255,136,0,0.12); color: var(--orange); border: 1px solid rgba(255,136,0,0.3); }
+.sev-badge.medium { background: rgba(255,195,0,0.08); color: var(--yellow); border: 1px solid rgba(255,195,0,0.25); }
+.host-tag { font-family: var(--mono); font-size: 10px; color: var(--teal); background: rgba(0,180,216,0.08); border: 1px solid rgba(0,180,216,0.2); padding: 1px 7px; border-radius: 4px; }
+.timeline-tag { font-family: var(--mono); font-size: 10px; color: var(--text-faint); background: rgba(255,255,255,0.03); border: 1px solid var(--border); padding: 1px 7px; border-radius: 4px; margin-left: auto; }
+.task-desc { font-size: 12px; color: var(--text-dim); line-height: 1.5; }
+.task-cve { display: inline-block; font-family: var(--mono); font-size: 10px; color: var(--blue-bright); margin-top: 4px; cursor: pointer; }
+.task-cve:hover { text-decoration: underline; }
+.tab-row { display: flex; gap: 4px; margin-bottom: 20px; flex-wrap: wrap; }
+.tab-btn {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 1px;
+  padding: 7px 16px; border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent; color: var(--text-dim);
+  cursor: pointer; transition: all 0.15s; text-transform: uppercase;
+}
+.tab-btn:hover { border-color: var(--border2); color: var(--text); }
+.tab-btn.active { background: rgba(30,144,255,0.12); border-color: rgba(30,144,255,0.4); color: var(--blue-bright); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+.progress-summary {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 16px; margin-bottom: 16px;
+}
+.progress-summary span { font-family: var(--mono); font-size: 12px; color: var(--text-dim); }
+.progress-summary .count { color: var(--blue-bright); font-weight: 600; }
+.progress-mini-bar { flex: 1; height: 4px; background: var(--surface3); border-radius: 2px; overflow: hidden; }
+.progress-mini-fill { height: 100%; background: linear-gradient(90deg, var(--blue), var(--cyan)); border-radius: 2px; transition: width 0.4s ease; }
+.host-table { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.host-table table { width: 100%; border-collapse: collapse; }
+.host-table thead tr { background: var(--surface2); border-bottom: 1px solid var(--border); }
+.host-table th { font-family: var(--mono); font-size: 10px; font-weight: 600; color: var(--text-dim); letter-spacing: 1.5px; text-transform: uppercase; padding: 12px 16px; text-align: left; }
+.host-table tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; cursor: default; }
+.host-table tbody tr:last-child { border-bottom: none; }
+.host-table tbody tr:hover { background: rgba(30,144,255,0.03); }
+.host-table td { padding: 12px 16px; font-size: 13px; vertical-align: middle; }
+.host-ip { font-family: var(--mono); color: var(--cyan); font-size: 12px; }
+.host-name { color: var(--text); font-weight: 500; }
+.host-os { font-size: 11px; color: var(--text-faint); font-family: var(--mono); }
+.actions-cell { display: flex; flex-wrap: wrap; gap: 4px; }
+.action-chip { font-family: var(--mono); font-size: 9px; color: var(--text-dim); background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; padding: 2px 6px; }
+.action-chip.done { color: var(--green); background: rgba(0,230,118,0.05); border-color: rgba(0,230,118,0.2); text-decoration: line-through; }
+.status-badge { display: inline-flex; align-items: center; gap: 5px; font-family: var(--mono); font-size: 10px; padding: 3px 9px; border-radius: 20px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
+.status-badge .dot { width: 5px; height: 5px; border-radius: 50%; }
+.status-badge.compromised { color: var(--red); background: rgba(255,64,96,0.1); border: 1px solid rgba(255,64,96,0.25); }
+.status-badge.compromised .dot { background: var(--red); animation: pulse 1s infinite; }
+.status-badge.at-risk { color: var(--orange); background: rgba(255,136,0,0.1); border: 1px solid rgba(255,136,0,0.25); }
+.status-badge.at-risk .dot { background: var(--orange); }
+.status-badge.monitor { color: var(--yellow); background: rgba(255,195,0,0.08); border: 1px solid rgba(255,195,0,0.2); }
+.status-badge.monitor .dot { background: var(--yellow); }
+.status-badge.secured { color: var(--green); background: rgba(0,230,118,0.08); border: 1px solid rgba(0,230,118,0.2); }
+.status-badge.secured .dot { background: var(--green); }
+.posture-section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; }
+.posture-row { margin-bottom: 16px; }
+.posture-row:last-child { margin-bottom: 0; }
+.posture-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-dim); margin-bottom: 6px; font-family: var(--mono); }
+.posture-label span:last-child { color: var(--text); }
+.bar-track { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; border: 1px solid var(--border); }
+.bar-fill { height: 100%; border-radius: 3px; transition: width 1s cubic-bezier(0.4,0,0.2,1); }
+.bar-fill.red { background: linear-gradient(90deg, var(--red), #ff7090); width: 15%; }
+.bar-fill.orange { background: linear-gradient(90deg, var(--orange), #ffaa44); width: 30%; }
+.bar-fill.blue-bar { background: linear-gradient(90deg, var(--blue-dim), var(--blue-bright)); width: 20%; }
+.bar-fill.teal { background: linear-gradient(90deg, var(--teal), var(--cyan)); width: 45%; }
+.footer {
+  margin-top: 48px; padding-top: 24px;
+  border-top: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 12px;
+}
+.footer-left { font-family: var(--mono); font-size: 11px; color: var(--text-faint); }
+.footer-right { display: flex; gap: 16px; }
+.footer-stat { text-align: center; }
+.footer-stat .val { font-family: var(--display); font-size: 18px; font-weight: 700; }
+.footer-stat .lbl { font-family: var(--mono); font-size: 9px; color: var(--text-faint); letter-spacing: 1px; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 768px) { .two-col { grid-template-columns: 1fr; } .topbar { padding: 12px 16px; } .main { padding: 20px 16px 60px; } }
+.event-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+.event-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px; padding: 18px;
+  position: relative; overflow: hidden;
+  animation: fadeUp 0.4s ease both;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.event-card:hover { transform: translateY(-2px); }
+.event-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+.event-card.ev-critical::before { background: var(--red); }
+.event-card.ev-high::before { background: var(--orange); }
+.event-card.ev-medium::before { background: var(--yellow); }
+.event-card.ev-info::before { background: var(--blue); }
+.event-card.ev-critical { border-color: rgba(255,64,96,0.2); }
+.event-card.ev-high { border-color: rgba(255,136,0,0.15); }
+.event-card.ev-medium { border-color: rgba(255,195,0,0.1); }
+.event-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+.event-id-badge {
+  font-family: var(--mono); font-size: 11px; font-weight: 700;
+  padding: 3px 10px; border-radius: 5px; letter-spacing: 0.5px;
+}
+.event-id-badge.critical { background: rgba(255,64,96,0.15); color: var(--red); border: 1px solid rgba(255,64,96,0.3); }
+.event-id-badge.high { background: rgba(255,136,0,0.12); color: var(--orange); border: 1px solid rgba(255,136,0,0.25); }
+.event-id-badge.medium { background: rgba(255,195,0,0.08); color: var(--yellow); border: 1px solid rgba(255,195,0,0.2); }
+.event-id-badge.info { background: rgba(30,144,255,0.1); color: var(--blue-bright); border: 1px solid rgba(30,144,255,0.2); }
+.event-name { font-size: 13px; font-weight: 600; color: var(--text); flex: 1; }
+.event-action-type {
+  font-family: var(--mono); font-size: 9px; font-weight: 600;
+  padding: 2px 7px; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.8px;
+  margin-left: auto;
+}
+.event-action-type.destructive { color: var(--red); background: rgba(255,64,96,0.08); border: 1px solid rgba(255,64,96,0.2); }
+.event-action-type.logon-fail { color: var(--orange); background: rgba(255,136,0,0.08); border: 1px solid rgba(255,136,0,0.2); }
+.event-action-type.logon-ok { color: var(--green); background: rgba(0,230,118,0.08); border: 1px solid rgba(0,230,118,0.2); }
+.event-action-type.rdp-ok { color: var(--yellow); background: rgba(255,195,0,0.06); border: 1px solid rgba(255,195,0,0.18); }
+.event-fields { display: flex; flex-direction: column; gap: 5px; }
+.event-field { display: flex; gap: 8px; align-items: flex-start; }
+.event-field-key {
+  font-family: var(--mono); font-size: 10px; color: var(--text-faint);
+  min-width: 90px; letter-spacing: 0.3px; padding-top: 1px;
+  text-transform: uppercase; font-weight: 600;
+}
+.event-field-val { font-family: var(--mono); font-size: 11px; color: var(--text-dim); line-height: 1.4; }
+.event-field-val.highlight { color: var(--cyan); }
+.event-field-val.danger { color: var(--red-bright); }
+.event-field-val.warn { color: var(--orange); }
+.event-field-val.ok { color: var(--green); }
+.event-desc {
+  margin-top: 10px; padding-top: 10px;
+  border-top: 1px solid var(--border);
+  font-size: 12px; color: var(--text-dim); line-height: 1.5;
+}
+.ftp-table {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; overflow: hidden; margin-bottom: 0;
+}
+.ftp-table table { width: 100%; border-collapse: collapse; }
+.ftp-table thead tr { background: var(--surface2); border-bottom: 1px solid var(--border); }
+.ftp-table th { font-family: var(--mono); font-size: 10px; font-weight: 600; color: var(--text-dim); letter-spacing: 1.5px; text-transform: uppercase; padding: 11px 14px; text-align: left; }
+.ftp-table tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
+.ftp-table tbody tr:last-child { border-bottom: none; }
+.ftp-table tbody tr:hover { background: rgba(30,144,255,0.03); }
+.ftp-table tbody tr.ftp-critical { background: rgba(255,64,96,0.04); }
+.ftp-table tbody tr.ftp-critical:hover { background: rgba(255,64,96,0.07); }
+.ftp-table td { padding: 10px 14px; font-size: 12px; font-family: var(--mono); color: var(--text-dim); vertical-align: middle; }
+.ftp-cmd { color: var(--cyan); font-weight: 600; }
+.ftp-critical-row .ftp-cmd { color: var(--red-bright); font-weight: 700; }
+.ftp-status-ok { color: var(--green); }
+.ftp-status-critical { color: var(--red); font-weight: 600; }
+.ftp-pkt { color: var(--text-faint); }
+.ftp-time { color: var(--text-faint); }
+.ioc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 10px;
+}
+.ioc-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px 16px;
+  transition: border-color 0.2s;
+  animation: fadeUp 0.4s ease both;
+}
+.ioc-card:hover { border-color: var(--border2); }
+.ioc-type {
+  font-family: var(--mono); font-size: 9px; font-weight: 700;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--blue-bright); margin-bottom: 6px;
+}
+.ioc-value {
+  font-family: var(--mono); font-size: 12px;
+  color: var(--yellow); margin-bottom: 4px; word-break: break-all;
+}
+.ioc-desc { font-size: 11px; color: var(--text-faint); line-height: 1.4; }
+.netev-list { display: flex; flex-direction: column; gap: 8px; }
+.netev-item {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px 18px;
+  display: flex; gap: 14px; align-items: flex-start;
+  transition: border-color 0.2s;
+  animation: fadeUp 0.4s ease both;
+}
+.netev-item:hover { border-color: var(--border2); }
+.netev-proto {
+  font-family: var(--mono); font-size: 10px; font-weight: 700;
+  padding: 3px 8px; border-radius: 4px; flex-shrink: 0;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.netev-proto.smb { color: var(--purple); background: rgba(176,111,255,0.1); border: 1px solid rgba(176,111,255,0.2); }
+.netev-proto.http { color: var(--red-bright); background: rgba(255,64,96,0.1); border: 1px solid rgba(255,64,96,0.2); }
+.netev-proto.ftp { color: var(--orange); background: rgba(255,136,0,0.08); border: 1px solid rgba(255,136,0,0.2); }
+.netev-proto.rdp { color: var(--cyan); background: rgba(0,229,255,0.08); border: 1px solid rgba(0,229,255,0.2); }
+.netev-content { flex: 1; }
+.netev-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 3px; }
+.netev-detail { font-family: var(--mono); font-size: 11px; color: var(--text-dim); line-height: 1.5; }
+.netev-hosts {
+  display: flex; gap: 6px; align-items: center; margin-top: 6px; flex-wrap: wrap;
+}
+.netev-host-pill {
+  font-family: var(--mono); font-size: 10px;
+  padding: 1px 8px; border-radius: 4px;
+}
+.netev-host-pill.src { color: var(--teal); background: rgba(0,180,216,0.08); border: 1px solid rgba(0,180,216,0.2); }
+.netev-host-pill.dst { color: var(--orange); background: rgba(255,136,0,0.06); border: 1px solid rgba(255,136,0,0.18); }
+.netev-arrow { color: var(--text-faint); font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="page">
+<header class="topbar">
+  <div class="topbar-left">
+    <div class="shield-icon" id="topbar-icon">🛡️</div>
+    <div class="topbar-brand">
+      <div class="topbar-title" id="topbar-title">BLUE TEAM — IR DASHBOARD</div>
+      <div class="topbar-sub">ICC-003 · THE BUGS · CORP.ORG · 10.0.0.0/24</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="team-toggle">
+      <button class="team-btn blue-btn active" id="blue-btn" onclick="switchTeam('blue')">🛡 BLUE</button>
+      <button class="team-btn red-btn" id="red-btn" onclick="switchTeam('red')">⚔ RED</button>
+    </div>
+    <div class="live-indicator"><div class="live-dot" id="live-dot"></div><span id="live-text">ACTIVE INCIDENT</span></div>
+    <div class="timestamp" id="clock">--:--:-- UTC</div>
+  </div>
+</header>
+<main class="main">
+  <div class="team-panel active" id="panel-blue">
+    <div class="hero-alert blue-alert">
+      <div class="alert-icon">🚨</div>
+      <div class="alert-text">
+        <h2>FULL DOMAIN COMPROMISE — CORP.ORG</h2>
+        <p>Red team achieved Domain Administrator via FTP hash exposure → credential crack → RDP → LSASS dump. Apache CVE-2021-41773 also provides independent RCE path. Immediate containment required.</p>
+      </div>
+      <div class="alert-badge">
+        <span class="badge-label">Risk Rating</span>
+        <span class="badge-value">CRITICAL</span>
+      </div>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-card c-critical">
+        <div class="stat-label">Critical Findings</div>
+        <div class="stat-value red">2</div>
+        <div class="stat-sub">Unpatched RCE + AD compromise</div>
+      </div>
+      <div class="stat-card c-high">
+        <div class="stat-label">High Findings</div>
+        <div class="stat-value orange">2</div>
+        <div class="stat-sub">Anon FTP + weak creds</div>
+      </div>
+      <div class="stat-card c-medium">
+        <div class="stat-label">Medium Findings</div>
+        <div class="stat-value yellow">3</div>
+        <div class="stat-sub">XST, MySQL, Slowloris</div>
+      </div>
+      <div class="stat-card c-info">
+        <div class="stat-label">Hosts Affected</div>
+        <div class="stat-value blue">6</div>
+        <div class="stat-sub">of 9 hosts in scope</div>
+      </div>
+      <div class="stat-card c-done">
+        <div class="stat-label">Tasks Resolved</div>
+        <div class="stat-value green" id="done-count">0</div>
+        <div class="stat-sub" id="done-sub">of 12 total</div>
+      </div>
+      <div class="stat-card c-purple">
+        <div class="stat-label">Events Detected</div>
+        <div class="stat-value purple">4</div>
+        <div class="stat-sub">1102 · 4625 · 4624 · 1149</div>
+      </div>
+    </div>
+    <div class="section-header">
+      <div class="section-title">Windows Event Log Analysis</div>
+      <div class="section-line"></div>
+      <div class="section-badge blue-badge">4 EVENTS DETECTED</div>
+    </div>
+    <div class="event-grid">
+      <div class="event-card ev-critical" style="animation-delay:.05s">
+        <div class="event-header">
+          <span class="event-id-badge critical">EVENT 1102</span>
+          <span class="event-name">Security Log Cleared</span>
+          <span class="event-action-type destructive">DESTRUCTIVE</span>
+        </div>
+        <div class="event-fields">
+          <div class="event-field"><span class="event-field-key">Timestamp</span><span class="event-field-val danger">2026-02-23 · 16:52:47 UTC</span></div>
+          <div class="event-field"><span class="event-field-key">Computer</span><span class="event-field-val highlight">EC2AMAZ-R2T6KBN.corp.org</span></div>
+          <div class="event-field"><span class="event-field-key">Subject</span><span class="event-field-val warn">CORP\Administrator</span></div>
+          <div class="event-field"><span class="event-field-key">Logon ID</span><span class="event-field-val">0x739FA</span></div>
+          <div class="event-field"><span class="event-field-key">Category</span><span class="event-field-val">Log clear · Audit Success</span></div>
+          <div class="event-field"><span class="event-field-key">Log Size</span><span class="event-field-val warn">24,362 events prior to clear</span></div>
+        </div>
+        <div class="event-desc">The security audit log on the Domain Controller was manually cleared by CORP\Administrator — a classic post-compromise anti-forensics action (T1070.001). Performed 1 day after the confirmed domain compromise. Indicates the attacker attempted to destroy evidence of their activity.</div>
+      </div>
+      <div class="event-card ev-high" style="animation-delay:.1s">
+        <div class="event-header">
+          <span class="event-id-badge high">EVENT 4625</span>
+          <span class="event-name">Failed Logon Attempt</span>
+          <span class="event-action-type logon-fail">LOGON FAIL</span>
+        </div>
+        <div class="event-fields">
+          <div class="event-field"><span class="event-field-key">Timestamp</span><span class="event-field-val warn">2026-02-15 · 04:23:31 AM</span></div>
+          <div class="event-field"><span class="event-field-key">Computer</span><span class="event-field-val highlight">DESKTOP-RCUCBMP</span></div>
+          <div class="event-field"><span class="event-field-key">Account</span><span class="event-field-val warn">Administrator · WORKGROUP</span></div>
+          <div class="event-field"><span class="event-field-key">Source IP</span><span class="event-field-val danger">10.0.0.219</span></div>
+          <div class="event-field"><span class="event-field-key">Status</span><span class="event-field-val">0xC000006D — bad username / auth</span></div>
+          <div class="event-field"><span class="event-field-key">Sub Status</span><span class="event-field-val">0xC000006A — correct user, wrong pw</span></div>
+          <div class="event-field"><span class="event-field-key">Process</span><span class="event-field-val">Caller PID 0x0 — system-initiated</span></div>
+        </div>
+        <div class="event-desc">Initial failed authentication attempt from attacker host 10.0.0.219 at 04:23:31. Sub-status 0xC000006A confirms the username was valid but the password was incorrect — attacker had already enumerated valid accounts. Followed within 23 seconds by a successful NTLMv2 authentication.</div>
+      </div>
+      <div class="event-card ev-high" style="animation-delay:.15s">
+        <div class="event-header">
+          <span class="event-id-badge high">EVENT 4624</span>
+          <span class="event-name">Successful Network Logon (Type 3)</span>
+          <span class="event-action-type logon-ok">LOGON SUCCESS</span>
+        </div>
+        <div class="event-fields">
+          <div class="event-field"><span class="event-field-key">Timestamp</span><span class="event-field-val warn">2026-02-15 · 04:23:54 AM</span></div>
+          <div class="event-field"><span class="event-field-key">Computer</span><span class="event-field-val highlight">DESKTOP-RCUCBMP</span></div>
+          <div class="event-field"><span class="event-field-key">Account</span><span class="event-field-val danger">DESKTOP-RCUCBMP\Admin</span></div>
+          <div class="event-field"><span class="event-field-key">Logon ID</span><span class="event-field-val">0x41ED0C5</span></div>
+          <div class="event-field"><span class="event-field-key">Source IP</span><span class="event-field-val danger">10.0.0.219 · port 44322</span></div>
+          <div class="event-field"><span class="event-field-key">Workstation</span><span class="event-field-val">IP-10-0-0-219</span></div>
+          <div class="event-field"><span class="event-field-key">Auth</span><span class="event-field-val warn">NTLMv2 · 128-bit session key</span></div>
+          <div class="event-field"><span class="event-field-key">Logon Type</span><span class="event-field-val">3 — Network (SMB share access)</span></div>
+        </div>
+        <div class="event-desc">Successful SMB/network logon 23 seconds after the failed attempt. Attacker from 10.0.0.219 authenticated as local Admin via NTLMv2. This is the access that enabled subsequent LSASS dump exfiltration via the \\10.0.0.40\dump share.</div>
+      </div>
+      <div class="event-card ev-medium" style="animation-delay:.2s">
+        <div class="event-header">
+          <span class="event-id-badge medium">EVENT 1149</span>
+          <span class="event-name">RDP Authentication Success</span>
+          <span class="event-action-type rdp-ok">RDP ACCESS</span>
+        </div>
+        <div class="event-fields">
+          <div class="event-field"><span class="event-field-key">Timestamp</span><span class="event-field-val warn">2026-02-13 · 08:59:23 AM</span></div>
+          <div class="event-field"><span class="event-field-key">Target Host</span><span class="event-field-val highlight">10.0.0.119 · DESKTOP-RCUCBMP</span></div>
+          <div class="event-field"><span class="event-field-key">Account</span><span class="event-field-val danger">Admin (local administrator)</span></div>
+          <div class="event-field"><span class="event-field-key">Source IP</span><span class="event-field-val danger">10.0.0.219</span></div>
+          <div class="event-field"><span class="event-field-key">Source</span><span class="event-field-val">TerminalServices-RemoteConnectionManager</span></div>
+          <div class="event-field"><span class="event-field-key">Preceding</span><span class="event-field-val warn">Anon FTP download of rdp-settings.txt</span></div>
+        </div>
+        <div class="event-desc">RDP authentication success logged by TerminalServices-RemoteConnectionManager. Attacker (10.0.0.219) used credentials obtained from the anonymous FTP rdp-settings.txt file. This is the initial foothold that led to LSASS dumping and full domain compromise. Occurred 2 days before the network logon events, confirming the FTP→RDP kill chain.</div>
+      </div>
+    </div>
+    <div class="section-header">
+      <div class="section-title">FTP Session Forensics — Session 1110</div>
+      <div class="section-line"></div>
+      <div class="section-badge blue-badge">10.0.0.219 → 10.0.0.40</div>
+    </div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:16px;display:flex;gap:24px;flex-wrap:wrap;">
+      <div><span style="font-family:var(--mono);font-size:9px;color:var(--text-faint);letter-spacing:1.5px;text-transform:uppercase;display:block;margin-bottom:3px;">Session ID</span><span style="font-family:var(--mono);font-size:13px;color:var(--cyan)">1110</span></div>
+      <div><span style="font-family:var(--mono);font-size:9px;color:var(--text-faint);letter-spacing:1.5px;text-transform:uppercase;display:block;margin-bottom:3px;">Date</span><span style="font-family:var(--mono);font-size:13px;color:var(--text)">2026-02-24 · 05:36:44 UTC</span></div>
+      <div><span style="font-family:var(--mono);font-size:9px;color:var(--text-faint);letter-spacing:1.5px;text-transform:uppercase;display:block;margin-bottom:3px;">Source</span><span style="font-family:var(--mono);font-size:13px;color:var(--red-bright)">10.0.0.219</span></div>
+      <div><span style="font-family:var(--mono);font-size:9px;color:var(--text-faint);letter-spacing:1.5px;text-transform:uppercase;display:block;margin-bottom:3px;">Destination</span><span style="font-family:var(--mono);font-size:13px;color:var(--orange)">10.0.0.40 · FileZilla 1.8.2</span></div>
+      <div><span style="font-family:var(--mono);font-size:9px;color:var(--text-faint);letter-spacing:1.5px;text-transform:uppercase;display:block;margin-bottom:3px;">Auth Method</span><span style="font-family:var(--mono);font-size:13px;color:var(--yellow)">Anonymous</span></div>
+      <div><span style="font-family:var(--mono);font-size:9px;color:var(--text-faint);letter-spacing:1.5px;text-transform:uppercase;display:block;margin-bottom:3px;">File Exfiltrated</span><span style="font-family:var(--mono);font-size:13px;color:var(--red)">rdp-settings.txt</span></div>
+      <div><span style="font-family:var(--mono);font-size:9px;color:var(--text-faint);letter-spacing:1.5px;text-transform:uppercase;display:block;margin-bottom:3px;">Duration</span><span style="font-family:var(--mono);font-size:13px;color:var(--text-dim)">≈ 14s</span></div>
+    </div>
+    <div class="ftp-table">
+      <table>
+        <thead><tr><th>#</th><th>Time (rel.)</th><th>Command</th><th>Description</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td class="ftp-pkt">1</td><td class="ftp-time">14.110s</td><td class="ftp-cmd">USER anonymous</td><td>Anonymous login attempt</td><td class="ftp-status-ok">230 Proceed to password</td></tr>
+          <tr><td class="ftp-pkt">2</td><td class="ftp-time">18.287s</td><td class="ftp-cmd">PASS anonymous</td><td>Anonymous password — file-based auth</td><td class="ftp-status-ok">230 Login successful</td></tr>
+          <tr><td class="ftp-pkt">3</td><td class="ftp-time">18.288s</td><td class="ftp-cmd">SYST</td><td>Query server OS type (reconnaissance)</td><td class="ftp-status-ok">Success</td></tr>
+          <tr><td class="ftp-pkt">4</td><td class="ftp-time">18.288s</td><td class="ftp-cmd">FEAT</td><td>Query server feature list (reconnaissance)</td><td class="ftp-status-ok">Success</td></tr>
+          <tr><td class="ftp-pkt">5</td><td class="ftp-time">20.600s</td><td class="ftp-cmd">EPSV</td><td>Extended passive mode — data channel setup</td><td class="ftp-status-ok">Success</td></tr>
+          <tr><td class="ftp-pkt">6</td><td class="ftp-time">20.601s</td><td class="ftp-cmd">LIST</td><td>Directory listing — filesystem exploration</td><td class="ftp-status-ok">Success</td></tr>
+          <tr><td class="ftp-pkt">7</td><td class="ftp-time">24.084s</td><td class="ftp-cmd">EPSV</td><td>Extended passive mode — second transfer</td><td class="ftp-status-ok">Success</td></tr>
+          <tr><td class="ftp-pkt">8</td><td class="ftp-time">24.086s</td><td class="ftp-cmd">NLST</td><td>List filenames only — targeted enumeration</td><td class="ftp-status-ok">Success</td></tr>
+          <tr><td class="ftp-pkt">9</td><td class="ftp-time">25.134s</td><td class="ftp-cmd">TYPE I</td><td>Set transfer mode to Binary/Image</td><td class="ftp-status-ok">Success</td></tr>
+          <tr><td class="ftp-pkt">10</td><td class="ftp-time">25.134s</td><td class="ftp-cmd">SIZE rdp-settings.txt</td><td>Check target file size before download</td><td class="ftp-status-ok">213 · 46 bytes</td></tr>
+          <tr><td class="ftp-pkt">11</td><td class="ftp-time">25.135s</td><td class="ftp-cmd">EPSV</td><td>Extended passive mode — download channel</td><td class="ftp-status-ok">Success</td></tr>
+          <tr class="ftp-critical"><td class="ftp-pkt">12</td><td class="ftp-time">25.136s</td><td class="ftp-cmd ftp-critical-row" style="color:var(--red);font-weight:700">RETR rdp-settings.txt</td><td style="color:var(--red-bright)">⚠ EXFILTRATION — RDP settings file downloaded from C:\ftp-files\</td><td class="ftp-status-critical">Success (CRITICAL)</td></tr>
+          <tr><td class="ftp-pkt">13</td><td class="ftp-time">25.139s</td><td class="ftp-cmd">MDTM rdp-settings.txt</td><td>Query file modification timestamp</td><td class="ftp-status-ok">Success</td></tr>
+          <tr><td class="ftp-pkt">14</td><td class="ftp-time">27.994s</td><td class="ftp-cmd">QUIT</td><td>Session terminated gracefully</td><td style="color:var(--text-faint)">221 Goodbye</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="section-header">
+      <div class="section-title">Network Forensic Evidence</div>
+      <div class="section-line"></div>
+      <div class="section-badge blue-badge">PCAP ANALYSIS</div>
+    </div>
+    <div class="netev-list">
+      <div class="netev-item" style="animation-delay:.05s">
+        <span class="netev-proto http">HTTP / RCE</span>
+        <div class="netev-content">
+          <div class="netev-title">Apache CVE-2021-41773 — RCE Payload Captured in PCAP</div>
+          <div class="netev-detail">POST requests to <code>/cgi-bin/.%2e/%2e%2e/%2e%2e/bin/sh</code> from 10.0.0.219 to 10.0.0.56 observed. Frame payload decoded: <code>echo Content-Type: text/plain\n\n; cd "/home"; ls 2>&amp;1</code>. Python reverse shell spawned: <code>python3 -c import pty; pty.spawn("/bin/bash")</code> — daemon uid=1 gid=1. Process visible in <code>ps aux</code> on 10.0.0.56 (PID 61752/61753).</div>
+          <div class="netev-hosts">
+            <span class="netev-host-pill src">SRC: 10.0.0.219</span>
+            <span class="netev-arrow">→</span>
+            <span class="netev-host-pill dst">DST: 10.0.0.56 :80</span>
+          </div>
+        </div>
+      </div>
+      <div class="netev-item" style="animation-delay:.1s">
+        <span class="netev-proto ftp">FTP</span>
+        <div class="netev-content">
+          <div class="netev-title">Anonymous FTP — rdp-settings.txt Exfiltration (Session 1110)</div>
+          <div class="netev-detail">FTP session captured in full. USER anonymous / PASS anonymous authenticated successfully. RETR command for <code>rdp-settings.txt</code> at packet frame relative time 25.136s. File path: <code>C:\ftp-files\rdp-settings.txt</code> — 46 bytes. MDTM metadata query followed, session ended with QUIT at 27.994s. IOC: FTP port 21 traffic between 10.0.0.219 and 10.0.0.40.</div>
+          <div class="netev-hosts">
+            <span class="netev-host-pill src">SRC: 10.0.0.219</span>
+            <span class="netev-arrow">→</span>
+            <span class="netev-host-pill dst">DST: 10.0.0.40 :21</span>
+          </div>
+        </div>
+      </div>
+      <div class="netev-item" style="animation-delay:.15s">
+        <span class="netev-proto smb">SMB2</span>
+        <div class="netev-content">
+          <div class="netev-title">SMB Lateral Movement — 10.0.0.119 → 10.0.0.40 (LSASS Stage)</div>
+          <div class="netev-detail">SMB2 traffic from 10.0.0.119 to 10.0.0.40 captured. NBSS session setup, NTLMSSP authentication with user <code>DESKTOP-RCUCBMP\Admin</code>, followed by GetInfo requests and IoctlRequest for <code>FSCTL_DFS_GET_REFERRALS</code>. Tree Connect to <code>\\10.0.0.40\dump</code> — the share used to stage the LSASS dump for exfiltration.</div>
+          <div class="netev-hosts">
+            <span class="netev-host-pill src">SRC: 10.0.0.119</span>
+            <span class="netev-arrow">→</span>
+            <span class="netev-host-pill dst">DST: 10.0.0.40 :445</span>
+          </div>
+        </div>
+      </div>
+      <div class="netev-item" style="animation-delay:.2s">
+        <span class="netev-proto smb">SMB2</span>
+        <div class="netev-content">
+          <div class="netev-title">SMB Exfiltration — LSASS Dump Transferred to Attacker Host</div>
+          <div class="netev-detail">TCP session from 10.0.0.219 to 10.0.0.40 on port 445. NTLMSSP negotiate/auth sequence with user <code>DESKTOP-RCUCBMP\Admin</code>. IoctlRequest to <code>\\10.0.0.40\dump</code>. Large sustained TCP transfer (56,884,656 bytes — full LSASS minidump) exfiltrated to the attacker machine. Tree Disconnect observed at session close. Pypykatz subsequently processed the dump to extract CORP\Administrator NTLM hash and Kerberos AES-256 keys.</div>
+          <div class="netev-hosts">
+            <span class="netev-host-pill src">SRC: 10.0.0.219</span>
+            <span class="netev-arrow">→</span>
+            <span class="netev-host-pill dst">DST: 10.0.0.40 :445</span>
+          </div>
+        </div>
+      </div>
+      <div class="netev-item" style="animation-delay:.25s">
+        <span class="netev-proto rdp">RDP</span>
+        <div class="netev-content">
+          <div class="netev-title">RDP Session — Initial Workstation Access (Event 1149 Corroborated)</div>
+          <div class="netev-detail">TerminalServices Event ID 1149 confirms RDP authentication success for Admin from 10.0.0.219 to 10.0.0.119 at 08:59:23 on 2026-02-13. This is the entry point that gave the attacker interactive shell access enabling SeDebugPrivilege use, tasklist enumeration of LSASS, and subsequent credential dumping. UAC-FileVirtue process observed in session.</div>
+          <div class="netev-hosts">
+            <span class="netev-host-pill src">SRC: 10.0.0.219</span>
+            <span class="netev-arrow">→</span>
+            <span class="netev-host-pill dst">DST: 10.0.0.119 :3389</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="section-header">
+      <div class="section-title">Indicators of Compromise (IOCs)</div>
+      <div class="section-line"></div>
+      <div class="section-badge blue-badge">BLOCK · MONITOR · HUNT</div>
+    </div>
+    <div class="ioc-grid">
+      <div class="ioc-card" style="animation-delay:.05s"><div class="ioc-type">Network · Attacker IP</div><div class="ioc-value">10.0.0.219</div><div class="ioc-desc">Source of all attack traffic — FTP anon login, RDP auth, SMB exfil, HTTP RCE payloads. Isolate and forensicate immediately.</div></div>
+      <div class="ioc-card" style="animation-delay:.08s"><div class="ioc-type">File · Exfiltrated</div><div class="ioc-value">C:\ftp-files\rdp-settings.txt</div><div class="ioc-desc">46-byte file containing Admin NTLM hash. Retrieved by 10.0.0.219 via anonymous FTP RETR at 2026-02-24 05:36:54 UTC.</div></div>
+      <div class="ioc-card" style="animation-delay:.11s"><div class="ioc-type">File · LSASS Dump</div><div class="ioc-value">C:\Windows\Temp\lsass.dmp</div><div class="ioc-desc">56,884,656-byte LSASS minidump created via rundll32 comsvcs.dll on 2026-02-13. Staged to \\10.0.0.40\dump for SMB exfil.</div></div>
+      <div class="ioc-card" style="animation-delay:.14s"><div class="ioc-type">Process · Payload</div><div class="ioc-value">python3 -c "import pty; pty.spawn..."</div><div class="ioc-desc">Reverse shell process (PID 61752/61753) spawned as daemon user on 10.0.0.56 via Apache CVE-2021-41773 cgi-bin exploit.</div></div>
+      <div class="ioc-card" style="animation-delay:.17s"><div class="ioc-type">HTTP · RCE URI</div><div class="ioc-value">/cgi-bin/.%2e/%2e%2e/%2e%2e/bin/sh</div><div class="ioc-desc">Path traversal payload targeting Apache 2.4.49. Multiple POST requests captured in PCAP from 10.0.0.219 to 10.0.0.56:80.</div></div>
+      <div class="ioc-card" style="animation-delay:.2s"><div class="ioc-type">Windows Event · Anti-Forensics</div><div class="ioc-value">Event ID 1102 · EC2AMAZ-R2T6KBN</div><div class="ioc-desc">Security log cleared by CORP\Administrator (Logon 0x739FA) on 2026-02-23 16:52:47 — one day post-compromise. Indicates cleanup attempt on the Domain Controller.</div></div>
+      <div class="ioc-card" style="animation-delay:.23s"><div class="ioc-type">Auth · SMB</div><div class="ioc-value">NTLMv2 from IP-10-0-0-219 :44322</div><div class="ioc-desc">NTLMv2 network logon (Type 3 / Event 4624) to DESKTOP-RCUCBMP\Admin at 04:23:54, 23s after failed attempt. Session key 128-bit. Used to access \\10.0.0.40\dump share.</div></div>
+      <div class="ioc-card" style="animation-delay:.26s"><div class="ioc-type">SMB Share · Staging</div><div class="ioc-value">\\10.0.0.40\dump</div><div class="ioc-desc">Non-standard SMB share used to stage and retrieve the LSASS dump. Tree Connect and large data transfer observed in PCAP. Share should not exist — remove and audit.</div></div>
+    </div>
+    <div class="section-header">
+      <div class="section-title">Remediation Checklist</div>
+      <div class="section-line"></div>
+      <div class="section-badge blue-badge">PRIORITIZED</div>
+    </div>
+    <div class="tab-row">
+      <button class="tab-btn active" onclick="showTab('all', this)">ALL</button>
+      <button class="tab-btn" onclick="showTab('now', this)">IMMEDIATE (0–7d)</button>
+      <button class="tab-btn" onclick="showTab('short', this)">SHORT TERM (7–30d)</button>
+      <button class="tab-btn" onclick="showTab('long', this)">LONG TERM (30–90d)</button>
+    </div>
+    <div class="progress-summary">
+      <span>Progress: <span class="count" id="progress-text">0 / 12</span> tasks completed</span>
+      <div class="progress-mini-bar"><div class="progress-mini-fill" id="progress-bar" style="width:0%"></div></div>
+    </div>
+    <div class="tab-panel active" id="tab-all">
+      <div class="task-list" id="task-list">
+        <div class="task-item" data-phase="now" onclick="toggleTask(this)">
+          <div class="task-check"><span class="task-check-mark">✓</span></div>
+          <div class="task-body">
+            <div class="task-top"><span class="task-title">Patch Apache 2.4.49 → 2.4.51+</span><div class="task-meta"><span class="sev-badge critical">CRITICAL</span><span class="host-tag">10.0.0.56</span><span class="timeline-tag">⚡ NOW</span></div></div>
+            <div class="task-desc">CVE-2021-41773 / CVE-2021-42013 allows unauthenticated RCE via path traversal in cgi-bin. Confirmed exploited. Shut down server, apply patch and redeploy. Verify: <code>apache2 -v</code></div>
+            <span class="task-cve">→ CVE-2021-41773 (CVSS 9.8) · CVE-2021-42013 (CVSS 9.8)</span>
+          </div>
+        </div>
+        <div class="task-item" data-phase="now" onclick="toggleTask(this)">
+          <div class="task-check"><span class="task-check-mark">✓</span></div>
+          <div class="task-body">
+            <div class="task-top"><span class="task-title">Isolate Domain Controller from network</span><div class="task-meta"><span class="sev-badge critical">CRITICAL</span><span class="host-tag">10.0.0.83</span><span class="timeline-tag">⚡ NOW</span></div></div>
+            <div class="task-desc">Domain Admin credentials (Password123!) confirmed exposed. Block RDP/LDAP from all non-admin subnets. Force reset CORP\Administrator and all domain accounts. Invalidate all Kerberos tickets (krbtgt reset x2).</div>
+          </div>
+        </div>
+        <div class="task-item" data-phase="now" onclick="toggleTask(this)">
+          <div class="task-check"><span class="task-check-mark">✓</span></div>
+          <div class="task-body">
+            <div class="task-top"><span class="task-title">Disable anonymous FTP on 10.0.0.40</span><div class="task-meta"><span class="sev-badge high">HIGH</span><span class="host-tag">10.0.0.40</span><span class="timeline-tag">⚡ NOW</span></div></div>
+            <div class="task-desc">FileZilla FTP configured with anonymous login — exposed rdp-settings.txt with NTLM hash cracked to q1w2e3r4t5y6. Disable anonymous access in FileZilla options. Audit all files in FTP root and remove sensitive data.</div>
+          </div>
+        </div>
+        <div class="task-item" data-phase="now" onclick="toggleTask(this)">
+          <div class="task-check"><span class="task-check-mark">✓</span></div>
+          <div class="task-body">
+            <div class="task-top"><span class="task-title">Reset all exposed credentials</span><div class="task-meta"><span class="sev-badge critical">CRITICAL</span><span class="host-tag">ALL HOSTS</span><span class="timeline-tag">⚡ NOW</span></div></div>
+            <div class="task-desc">Known compromised credentials: Admin/q1w2e3r4t5y6 (10.0.0.40), CORP\john/1234567890 (10.0.0.119), CORP\Administrator/Password123! (DC + workstation), root/typnwzmxjgck (10.0.0.56, 100, 101). Rotate all. Enforce 16+ character policy.</div>
+          </div>
+        </div>
+        <div class="task-item" data-phase="now" onclick="toggleTask(this)">
+          <div class="task-check"><span class="task-check-mark">✓</span></div>
+          <div class="task-body">
+            <div class="task-top"><span class="task-title">Patch OpenSSH CVE-2024-6387 (regreSSHion)</span><div class="task-meta"><span class="sev-badge high">HIGH</span><span class="host-tag">10.0.0.23 · .56 · .100 · .101</span><span class="timeline-tag">⚡ NOW</span></div></div>
+            <div class="task-desc">OpenSSH 9.6p1 confirmed on multiple hosts — vulnerable to CVE-2024-6387 (unauthenticated RCE via race condition). Update to OpenSSH 9.8p1+ or apply vendor patch. Temporarily restrict SSH by IP via firewall rules.</div>
+            <span class="task-cve">→ CVE-2024-6387 (CVSS 8.1)</span>
+          </div>
+        </div>
+        <div class="task-item" data-phase="now" onclick="toggleTask(this)">
+          <div class="task-check"><span class="task-check-mark">✓</span></div>
+          <div class="task-body">
+            <div class="task-top"><span class="task-title">Regenerate SSH host keys (10.0.0.100/101)</span><div class="task-meta"><span class="sev-badge high">HIGH</span><span class="host-tag">10.0.0.100 · .101</span><span class="timeline-tag">⚡ NOW</span></div></div>
+            <div class="task-desc">Nmap confirms identical SSH host keys on .100 and .101 — indicates cloned configuration. Run <code>ssh-keygen -A</code> on both to regenerate unique keys. Investigate if these hosts share other credentials.</div>
+          </div>
+        </div>
+        <div class="task-item" data-phase="short" onclick="toggleTask(this)">
+          <div class="task-check"><span class="task-check-mark">✓</span></div>
+          <div class="task-body">
+            <div class="task-top"><span class="task-title">Deploy LAPS for local password rotation</span><div class="task-meta"><span class="sev-badge high">HIGH</span><span class="host-tag">10.0.0.40 · .119</span><span class="timeline-tag">7–30d</span></div></div>
+            <div class="task-desc">Local admin password shared across workstations facilitated lateral movement. Implement Microsoft LAPS for per-machine unique password auto-rotation. Enforce via Group Policy.</div>
+          </div>
+        </div>
+        <div class="task-item" data-phase="short" onclick="toggleTask(this)">
+          <div class="task-check"><span class="task-check-mark">✓</span></div>
+          <div class="task-body">
+            <div class="task-top"><span class="task-title">Restrict RDP to admin subnets</span><div class="task-meta"><span class="sev-badge high">HIGH</span><span class="host-tag">10.0.0.119 · .83</span><span class="timeline-tag">7–30d</span></div></div>
+            <div class="task-desc">RDP (port 3389) widely exposed on /24. Restrict via Windows Firewall GPO to approved IPs. Enable Network Level Authentication (NLA). Consider replacing RDP with PAM/VPN solution.</div>
+          </div>
+        </div>
+        <div class="task-item" data-phase="short" onclick="toggleTask(this)">
+          <div class="task-check"><span class="task-check-mark">✓</span></div>
+          <div class="task-body">
+            <div class="task-top"><span class="task-title">Hardening MySQL — remove host-based authentication</span><div class="task-meta"><span class="sev-badge medium">MEDIUM</span><span class="host-tag">10.0.0.56</span><span class="timeline-tag">7–30d</span></div></div>
+            <div class="task-desc">MySQL (port 3306) exposed externally with host-based restrictions as only control. Bind MySQL to 127.0.0.1, enforce strong per-user authentication, disable remote root. Audit: <code>SHOW GRANTS FOR 'root'@'%';</code></div>
+          </div>
+        </div>
+        <div class="task-item" data-phase="short" onclick="toggleTask(this)">
+          <div class="task-check"><span class="task-check-mark">✓</span></div>
+          <div class="task-body">
+            <div class="task-top"><span class="task-title">Disable HTTP TRACE method (XST mitigation)</span><div class="task-meta"><span class="sev-badge medium">MEDIUM</span><span class="host-tag">10.0.0.56</span><span class="timeline-tag">7–30d</span></div></div>
+            <div class="task-desc">TRACE method enabled on Apache — XST confirmed. Add to Apache config: <code>TraceEnable Off</code>. Audit other dangerous methods (PUT, DELETE). Verify with <code>curl -X TRACE http://10.0.0.56</code>.</div>
+          </div>
+        </div>
+        <div class="task-item" data-phase="long" onclick="toggleTask(this)">
+          <div class="task-check"><span class="task-check-mark">✓</span></div>
+          <div class="task-body">
+            <div class="task-top"><span class="task-title">Implement network segmentation</span><div class="task-meta"><span class="sev-badge medium">MEDIUM</span><span class="host-tag">10.0.0.0/24</span><span class="timeline-tag">30–90d</span></div></div>
+            <div class="task-desc">Flat /24 network allowed unrestricted lateral movement after initial foothold. Segment into VLANs: DMZ (web servers), workstations, servers, management. Enforce inter-VLAN firewall rules. DC accessible only from admin VLAN.</div>
+          </div>
+        </div>
+        <div class="task-item" data-phase="long" onclick="toggleTask(this)">
+          <div class="task-check"><span class="task-check-mark">✓</span></div>
+          <div class="task-body">
+            <div class="task-top"><span class="task-title">Deploy centralized logging + SIEM</span><div class="task-meta"><span class="sev-badge medium">MEDIUM</span><span class="host-tag">ALL HOSTS</span><span class="timeline-tag">30–90d</span></div></div>
+            <div class="task-desc">No detection capability present — entire attack chain went unnoticed. Implement centralized syslog/SIEM (Wazuh, Elastic SIEM). Create rules for: anonymous FTP logins, LSASS access (Event ID 10), multiple failed RDP attempts, SMB lateral movement.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="tab-panel" id="tab-now"></div>
+    <div class="tab-panel" id="tab-short"></div>
+    <div class="tab-panel" id="tab-long"></div>
+    <div class="section-header">
+      <div class="section-title">Host Status & Required Actions</div>
+      <div class="section-line"></div>
+      <div class="section-badge blue-badge">9 HOSTS</div>
+    </div>
+    <div class="host-table">
+      <table>
+        <thead><tr><th>IP</th><th>Host</th><th>OS</th><th>Status</th><th>Required Actions</th></tr></thead>
+        <tbody>
+          <tr><td class="host-ip">10.0.0.83</td><td class="host-name">Domain Controller</td><td class="host-os">Windows / corp.org</td><td><span class="status-badge compromised"><span class="dot"></span>COMPROMISED</span></td><td class="actions-cell"><span class="action-chip">Reset DA creds</span><span class="action-chip">krbtgt x2</span><span class="action-chip">Restrict RDP</span><span class="action-chip">Audit AD</span></td></tr>
+          <tr><td class="host-ip">10.0.0.40</td><td class="host-name">Laptop (DESKTOP-RCUCBMP)</td><td class="host-os">Windows 10/2019</td><td><span class="status-badge compromised"><span class="dot"></span>COMPROMISED</span></td><td class="actions-cell"><span class="action-chip">Disable anon FTP</span><span class="action-chip">Remove hash file</span><span class="action-chip">Reset Admin pw</span><span class="action-chip">LAPS</span></td></tr>
+          <tr><td class="host-ip">10.0.0.119</td><td class="host-name">Operations WS</td><td class="host-os">Windows (CORP domain)</td><td><span class="status-badge compromised"><span class="dot"></span>COMPROMISED</span></td><td class="actions-cell"><span class="action-chip">Reset CORP\john</span><span class="action-chip">Restrict RDP</span><span class="action-chip">Review LSASS logs</span></td></tr>
+          <tr><td class="host-ip">10.0.0.56</td><td class="host-name">WebServer</td><td class="host-os">Ubuntu Linux</td><td><span class="status-badge compromised"><span class="dot"></span>COMPROMISED</span></td><td class="actions-cell"><span class="action-chip">Patch Apache</span><span class="action-chip">Reset root pw</span><span class="action-chip">Disable TRACE</span><span class="action-chip">Bind MySQL</span></td></tr>
+          <tr><td class="host-ip">10.0.0.100</td><td class="host-name">Hunter (1)</td><td class="host-os">Ubuntu Linux</td><td><span class="status-badge at-risk"><span class="dot"></span>AT RISK</span></td><td class="actions-cell"><span class="action-chip">Regen SSH keys</span><span class="action-chip">Reset root pw</span><span class="action-chip">Patch OpenSSH</span></td></tr>
+          <tr><td class="host-ip">10.0.0.101</td><td class="host-name">Hunter (2)</td><td class="host-os">Ubuntu Linux</td><td><span class="status-badge at-risk"><span class="dot"></span>AT RISK</span></td><td class="actions-cell"><span class="action-chip">Regen SSH keys</span><span class="action-chip">Reset root pw</span><span class="action-chip">Patch OpenSSH</span></td></tr>
+          <tr><td class="host-ip">10.0.0.23</td><td class="host-name">Elasticsearch</td><td class="host-os">Ubuntu Linux</td><td><span class="status-badge monitor"><span class="dot"></span>MONITOR</span></td><td class="actions-cell"><span class="action-chip">Slowloris mitigation</span><span class="action-chip">Patch OpenSSH</span><span class="action-chip">Restrict 9200/tcp</span></td></tr>
+          <tr><td class="host-ip">10.0.0.176</td><td class="host-name">OpenVPN</td><td class="host-os">Ubuntu Linux</td><td><span class="status-badge monitor"><span class="dot"></span>MONITOR</span></td><td class="actions-cell"><span class="action-chip">Patch OpenSSH</span><span class="action-chip">Audit VPN users</span></td></tr>
+          <tr><td class="host-ip">10.0.0.1</td><td class="host-name">Gateway / Router</td><td class="host-os">Unknown</td><td><span class="status-badge monitor"><span class="dot"></span>MONITOR</span></td><td class="actions-cell"><span class="action-chip">Review firewall rules</span><span class="action-chip">Enable logging</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="section-header">
+      <div class="section-title">MITRE ATT&CK — Detection Guide</div>
+      <div class="section-line"></div>
+      <div class="section-badge blue-badge">7 TECHNIQUES</div>
+    </div>
+    <div class="mitre-grid">
+      <div class="mitre-card"><div class="mitre-phase blue">Initial Access</div><div class="mitre-technique">Valid Accounts</div><div class="mitre-id">T1078</div><div class="mitre-detail"><strong class="blue">Detect:</strong> Alert on logins with accounts recently seen in FTP logs. Correlate new RDP sessions from unusual IPs.</div></div>
+      <div class="mitre-card"><div class="mitre-phase blue">Initial Access</div><div class="mitre-technique">Exploit Public-Facing App</div><div class="mitre-id">T1190</div><div class="mitre-detail"><strong class="blue">Detect:</strong> Alert on Apache logs containing <code>%2e%2e</code> or cgi-bin path traversal patterns. WAF rules for CVE-2021-41773.</div></div>
+      <div class="mitre-card"><div class="mitre-phase blue">Credential Access</div><div class="mitre-technique">OS Credential Dumping</div><div class="mitre-id">T1003</div><div class="mitre-detail"><strong class="blue">Detect:</strong> Windows Event ID 10 (LSASS access). Alert on <code>rundll32.exe comsvcs.dll MiniDump</code>. Enable Credential Guard.</div></div>
+      <div class="mitre-card"><div class="mitre-phase blue">Lateral Movement</div><div class="mitre-technique">Remote Services (RDP)</div><div class="mitre-id">T1021.001</div><div class="mitre-detail"><strong class="blue">Detect:</strong> Alert on Event ID 4624 (Type 10 logon) from non-admin sources. Monitor RDP sessions between workstations.</div></div>
+      <div class="mitre-card"><div class="mitre-phase blue">Lateral Movement</div><div class="mitre-technique">SMB/Admin Shares</div><div class="mitre-id">T1021.002</div><div class="mitre-detail"><strong class="blue">Detect:</strong> Alert on access to <code>\\host\dump</code>. Monitor Event ID 5140 for large file transfers.</div></div>
+      <div class="mitre-card"><div class="mitre-phase blue">Privilege Escalation</div><div class="mitre-technique">Abuse Elevation Control</div><div class="mitre-id">T1548</div><div class="mitre-detail"><strong class="blue">Detect:</strong> Monitor SeDebugPrivilege (Event ID 4672). Alert on unusual privilege assignments.</div></div>
+      <div class="mitre-card"><div class="mitre-phase blue">Discovery</div><div class="mitre-technique">Network Service Scanning</div><div class="mitre-id">T1046</div><div class="mitre-detail"><strong class="blue">Detect:</strong> Alert on high-speed sequential connection attempts. Implement IDS signatures for Nmap patterns.</div></div>
+    </div>
+    <div class="section-header">
+      <div class="section-title">Current Defensive Posture</div>
+      <div class="section-line"></div>
+      <div class="section-badge blue-badge">PRE-REMEDIATION</div>
+    </div>
+    <div class="posture-section">
+      <div class="posture-row"><div class="posture-label"><span>Patch Coverage</span><span>15% — critical CVEs unpatched</span></div><div class="bar-track"><div class="bar-fill red"></div></div></div>
+      <div class="posture-row"><div class="posture-label"><span>Credential Hygiene</span><span>30% — weak/shared passwords, exposed hashes</span></div><div class="bar-track"><div class="bar-fill orange"></div></div></div>
+      <div class="posture-row"><div class="posture-label"><span>Network Segmentation</span><span>20% — flat /24, no VLAN separation</span></div><div class="bar-track"><div class="bar-fill blue-bar"></div></div></div>
+      <div class="posture-row"><div class="posture-label"><span>Logging & Detection</span><span>45% — Elasticsearch present, no correlated alerts</span></div><div class="bar-track"><div class="bar-fill teal"></div></div></div>
+    </div>
+    <div class="footer">
+      <div class="footer-left">ICC-003 · THE BUGS · Engagement: 2026-02-22 · Blue Team IR Dashboard</div>
+      <div class="footer-right">
+        <div class="footer-stat"><div class="val" style="color:var(--red)">4</div><div class="lbl">COMPROMISED</div></div>
+        <div class="footer-stat"><div class="val" style="color:var(--orange)">2</div><div class="lbl">AT RISK</div></div>
+        <div class="footer-stat"><div class="val" style="color:var(--yellow)">3</div><div class="lbl">MONITORING</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="team-panel" id="panel-red">
+    <div class="hero-alert red-alert">
+      <div class="alert-icon">⚔️</div>
+      <div class="alert-text">
+        <h2>OPERATION COMPLETED — DOMAIN ADMIN OBTAINED</h2>
+        <p>Full domain compromise of corp.org in 5 steps starting from anonymous FTP. Two independent attack chains identified. All objectives achieved during 2026-02-22 purple team engagement.</p>
+      </div>
+      <div class="alert-badge">
+        <span class="badge-label">Operation</span>
+        <span class="badge-value">ICC-003</span>
+      </div>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-card c-critical">
+        <div class="stat-label">Compromised Hosts</div>
+        <div class="stat-value red">4</div>
+        <div class="stat-sub">DC, Laptop, WS, WebServer</div>
+      </div>
+      <div class="stat-card c-high">
+        <div class="stat-label">Credentials Obtained</div>
+        <div class="stat-value orange">7</div>
+        <div class="stat-sub">via FTP + LSASS dump</div>
+      </div>
+      <div class="stat-card c-medium">
+        <div class="stat-label">Vulns Exploited</div>
+        <div class="stat-value yellow">3</div>
+        <div class="stat-sub">FTP · Apache RCE · Weak Creds</div>
+      </div>
+      <div class="stat-card c-purple">
+        <div class="stat-label">Max Privilege</div>
+        <div class="stat-value purple">DA</div>
+        <div class="stat-sub">CORP\Administrator</div>
+      </div>
+      <div class="stat-card c-info">
+        <div class="stat-label">Attack Chains</div>
+        <div class="stat-value blue">2</div>
+        <div class="stat-sub">FTP→RDP→DC / Apache RCE</div>
+      </div>
+    </div>
+    <div class="section-header">
+      <div class="section-title">Attack Narrative — Timeline</div>
+      <div class="section-line"></div>
+      <div class="section-badge red-badge">5 STEPS</div>
+    </div>
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-dot exploited">●</div>
+        <div class="tl-card initial-card" style="border-left:3px solid var(--orange)">
+          <div class="tl-head">
+            <span class="tl-step">STEP 1</span>
+            <span class="tl-title">Reconnaissance — Nmap & Enumeration</span>
+            <span class="host-tag">10.0.0.0/24</span>
+          </div>
+          <div class="tl-body">Initial scan with <code>nmap -sn 10.0.0.0/24</code> identified 9 live hosts. Deep scan with <code>nmap -A -sV</code> revealed exposed services: anonymous FTP on .40, vulnerable Apache 2.4.49 on .56, exposed RDP on .119 and .83, MySQL with weak auth on .56. Gobuster confirmed cgi-bin directory accessible on WebServer.</div>
+          <div class="tl-evidence">
+            <span class="ev-label">Evidence</span>
+            ftp-anon: Anonymous FTP login allowed<br>
+            rdp-settings.txt [NSE: writeable]<br>
+            Apache httpd 2.4.49 ((Unix))
+          </div>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot exploited">●</div>
+        <div class="tl-card high-card">
+          <div class="tl-head">
+            <span class="tl-step">STEP 2</span>
+            <span class="tl-title">Anonymous FTP → NTLM Hash Exposure</span>
+            <span class="host-tag">10.0.0.40</span>
+          </div>
+          <div class="tl-body">Anonymous login to FileZilla FTP on 10.0.0.40 with no authentication. File <strong>rdp-settings.txt</strong> found and downloaded. File contained local Admin NTLM hash. Hash submitted to online cracker (crackstation.net) — password obtained in seconds.</div>
+          <div class="tl-evidence">
+            <span class="ev-label">Cracked Hash</span>
+            Admin:4d8b4d6e78c7a1679bcf58b4e37ff35f623c2b56<br>
+            → Type: SHA1 | Result: <strong>q1w2e3r4t5y6</strong>
+          </div>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot exploited">●</div>
+        <div class="tl-card critical-card">
+          <div class="tl-head">
+            <span class="tl-step">STEP 3</span>
+            <span class="tl-title">RDP with Cracked Credentials → Initial Access</span>
+            <span class="host-tag">10.0.0.119</span>
+          </div>
+          <div class="tl-body">With cracked password, authenticated via RDP to workstation 10.0.0.119 as Admin. Immediate confirmation of local administrative privileges. Machine domain-joined to corp.org with SeDebugPrivilege available, opening path to credential dumping.</div>
+          <div class="tl-evidence">
+            <span class="ev-label">Command</span>
+            xfreerdp /v:10.0.0.119 /u:Admin /p:q1w2e3r4t5y6 /cert:ignore<br>
+            whoami → desktop-rcucbmp\admin
+          </div>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot exploited">●</div>
+        <div class="tl-card critical-card">
+          <div class="tl-head">
+            <span class="tl-step">STEP 4</span>
+            <span class="tl-title">LSASS Dump → Domain Credentials</span>
+            <span class="host-tag">10.0.0.119 → 10.0.0.40</span>
+          </div>
+          <div class="tl-body">From RDP session with SeDebugPrivilege, full LSASS memory dump using <code>rundll32.exe comsvcs.dll MiniDump</code>. 56MB file transferred via SMB to attacker host. Processed with pypykatz revealing CORP\Administrator NTLM credentials and Kerberos AES-256 keys.</div>
+          <div class="tl-evidence">
+            <span class="ev-label">Extracted Credentials</span>
+            Username: Administrator | Domain: CORP<br>
+            NT: 2b576acbe6bcfda7294d6bd18041b8fe<br>
+            AES256: 254d62e7944368e5af82a6282637065032234e8e8a1...
+          </div>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot exploited">●</div>
+        <div class="tl-card" style="border-left:3px solid var(--red); border-color:rgba(255,64,96,0.4);">
+          <div class="tl-head">
+            <span class="tl-step">STEP 5</span>
+            <span class="tl-title">Domain Controller Compromised — DA OBTAINED</span>
+            <span class="host-tag">10.0.0.83</span>
+          </div>
+          <div class="tl-body">With extracted credentials from LSASS, authenticated via RDP to Domain Controller 10.0.0.83 as CORP\Administrator. Full Active Directory access — all users, computers, policies and domain secrets accessible. Complete compromise of corp.org.</div>
+          <div class="tl-evidence">
+            <span class="ev-label">Final Command</span>
+            xfreerdp /v:10.0.0.83 /u:Administrator /d:corp.org /p:Password123! /cert:ignore<br>
+            → Domain Admin access CONFIRMED ✓
+          </div>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot found" style="border-color:var(--cyan)">●</div>
+        <div class="tl-card" style="border-left:3px solid var(--cyan)">
+          <div class="tl-head">
+            <span class="tl-step">ALT. CHAIN</span>
+            <span class="tl-title">Apache CVE-2021-41773 — Independent RCE</span>
+            <span class="host-tag">10.0.0.56</span>
+          </div>
+          <div class="tl-body">Via independent path, Python exploit against Apache 2.4.49 using cgi-bin path traversal. Remote code execution confirmed as <strong>daemon</strong> user. Filesystem access to web server obtained. This chain provides a second critical entry point completely separate.</div>
+          <div class="tl-evidence">
+            <span class="ev-label">Payload</span>
+            http://10.0.0.56:80/cgi-bin/.%2e/%2e%2e/%2e%2e/bin/sh<br>
+            uid=1(daemon) gid=1(daemon) groups=1(daemon)
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="section-header" style="margin-top:40px">
+      <div class="section-title">Attack Path Diagram</div>
+      <div class="section-line"></div>
+      <div class="section-badge red-badge">CHAIN #1</div>
+    </div>
+    <div class="attack-path">
+      <div class="ap-step initial">
+        <div class="ap-num">0</div>
+        <div class="ap-content">
+          <div class="ap-title">Nmap Scan — 10.0.0.0/24</div>
+          <div class="ap-detail">nmap -A -sV --script vuln</div>
+        </div>
+        <span class="ap-tag" style="color:var(--blue-bright);background:rgba(30,144,255,0.08);border:1px solid rgba(30,144,255,0.2);">RECON</span>
+      </div>
+      <div class="ap-arrow">↓</div>
+      <div class="ap-step initial">
+        <div class="ap-num">1</div>
+        <div class="ap-content">
+          <div class="ap-title">Anonymous FTP — rdp-settings.txt</div>
+          <div class="ap-detail ap-host">10.0.0.40 · FileZilla 1.8.2</div>
+        </div>
+        <span class="ap-tag ftp">FTP ANON</span>
+      </div>
+      <div class="ap-arrow">↓</div>
+      <div class="ap-step critical-step">
+        <div class="ap-num">2</div>
+        <div class="ap-content">
+          <div class="ap-title">NTLM Hash Cracked → q1w2e3r4t5y6</div>
+          <div class="ap-detail">SHA1 · crackstation.net</div>
+        </div>
+        <span class="ap-tag" style="color:var(--yellow);background:rgba(255,195,0,0.08);border:1px solid rgba(255,195,0,0.2);">CRACK</span>
+      </div>
+      <div class="ap-arrow">↓</div>
+      <div class="ap-step critical-step">
+        <div class="ap-num">3</div>
+        <div class="ap-content">
+          <div class="ap-title">RDP Workstation — Admin</div>
+          <div class="ap-detail ap-host">10.0.0.119 · desktop-rcucbmp\admin</div>
+        </div>
+        <span class="ap-tag rdp">RDP</span>
+      </div>
+      <div class="ap-arrow">↓</div>
+      <div class="ap-step critical-step">
+        <div class="ap-num">4</div>
+        <div class="ap-content">
+          <div class="ap-title">LSASS Dump → CORP\Administrator Credentials</div>
+          <div class="ap-detail">rundll32 comsvcs.dll · pypykatz · SMB exfil</div>
+        </div>
+        <span class="ap-tag smb">LSASS+SMB</span>
+      </div>
+      <div class="ap-arrow">↓</div>
+      <div class="ap-step final-step">
+        <div class="ap-num">5</div>
+        <div class="ap-content">
+          <div class="ap-title">Domain Controller — CORP\Administrator</div>
+          <div class="ap-detail ap-host">10.0.0.83 · DOMAIN ADMIN ✓</div>
+        </div>
+        <span class="ap-tag ad">DA OBTAINED</span>
+      </div>
+    </div>
+    <div class="section-header">
+      <div class="section-title">Credentials Obtained</div>
+      <div class="section-line"></div>
+      <div class="section-badge red-badge">7 CREDENTIALS</div>
+    </div>
+    <div class="cred-table">
+      <table>
+        <thead><tr><th>Host</th><th>User</th><th>Password</th><th>Method</th></tr></thead>
+        <tbody>
+          <tr><td class="cred-ip">10.0.0.40</td><td class="cred-user">Admin</td><td class="cred-pass">q1w2e3r4t5y6</td><td><span class="cred-method ftp">FTP + Hash Crack</span></td></tr>
+          <tr><td class="cred-ip">10.0.0.119</td><td class="cred-user">CORP\john</td><td class="cred-pass">1234567890</td><td><span class="cred-method lsass">LSASS Dump</span></td></tr>
+          <tr><td class="cred-ip">10.0.0.119 · 10.0.0.83</td><td class="cred-user">CORP\Administrator</td><td class="cred-pass">Password123!</td><td><span class="cred-method lsass">LSASS Dump</span></td></tr>
+          <tr><td class="cred-ip">10.0.0.56</td><td class="cred-user">root</td><td class="cred-pass">typnwzmxjgck</td><td><span class="cred-method lsass">Dump / Config</span></td></tr>
+          <tr><td class="cred-ip">10.0.0.100 · 10.0.0.101</td><td class="cred-user">root</td><td class="cred-pass">typnwzmxjgck</td><td><span class="cred-method lsass">Shared Config</span></td></tr>
+          <tr><td class="cred-ip">10.0.0.23</td><td class="cred-user">elastic</td><td class="cred-pass">cVsfMQ-=q-+gWTdkv1Zk</td><td><span class="cred-method brute">Config / Scan</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="section-header">
+      <div class="section-title">Vulnerability Matrix</div>
+      <div class="section-line"></div>
+      <div class="section-badge red-badge">6 FINDINGS</div>
+    </div>
+    <div class="vuln-grid">
+      <div class="vuln-card exploited-card" style="animation-delay:.05s">
+        <div class="vuln-top"><span class="vuln-sev critical">CRITICAL</span><span class="vuln-status exploited">EXPLOITED</span></div>
+        <div class="vuln-name">Apache 2.4.49 Path Traversal RCE</div>
+        <div class="vuln-cve">CVE-2021-41773 / CVE-2021-42013 · CVSS 9.8</div>
+        <div class="vuln-host">10.0.0.56 · Ubuntu · Apache httpd</div>
+        <div class="vuln-desc">Path traversal in cgi-bin allows arbitrary command execution as daemon. Public exploit available. Immediate unauthenticated RCE.</div>
+      </div>
+      <div class="vuln-card exploited-card" style="animation-delay:.1s">
+        <div class="vuln-top"><span class="vuln-sev high">HIGH</span><span class="vuln-status exploited">EXPLOITED</span></div>
+        <div class="vuln-name">Weak Credential Exposure via FTP → Domain Compromise</div>
+        <div class="vuln-cve">CWE-798, CWE-200 · CVSS 8.1</div>
+        <div class="vuln-host">10.0.0.40 · 10.0.0.119 · 10.0.0.83</div>
+        <div class="vuln-desc">NTLM hash exposed via anonymous FTP → cracked → RDP → LSASS → DA. 5-step chain resulting in full domain compromise.</div>
+      </div>
+      <div class="vuln-card confirmed-card" style="animation-delay:.15s">
+        <div class="vuln-top"><span class="vuln-sev high">HIGH</span><span class="vuln-status confirmed">CONFIRMED</span></div>
+        <div class="vuln-name">Anonymous FTP Enabled</div>
+        <div class="vuln-cve">CWE-287 · no CVE</div>
+        <div class="vuln-host">10.0.0.40 · FileZilla Server 1.8.2</div>
+        <div class="vuln-desc">FTP allows anonymous login without authentication. Sensitive files publicly accessible including credential hashes.</div>
+      </div>
+      <div class="vuln-card confirmed-card" style="animation-delay:.2s">
+        <div class="vuln-top"><span class="vuln-sev medium">MEDIUM</span><span class="vuln-status confirmed">CONFIRMED</span></div>
+        <div class="vuln-name">Cross-Site Tracing (XST)</div>
+        <div class="vuln-cve">CWE-16</div>
+        <div class="vuln-host">10.0.0.56 · Apache httpd</div>
+        <div class="vuln-desc">TRACE method enabled on Apache. Server echoes headers including cookies and authorization tokens, facilitating advanced XSS attacks.</div>
+      </div>
+      <div class="vuln-card confirmed-card" style="animation-delay:.25s">
+        <div class="vuln-top"><span class="vuln-sev medium">MEDIUM</span><span class="vuln-status confirmed">CONFIRMED</span></div>
+        <div class="vuln-name">MySQL Exposed with Host-Based Restriction</div>
+        <div class="vuln-cve">CWE-284</div>
+        <div class="vuln-host">10.0.0.56 · MySQL</div>
+        <div class="vuln-desc">MySQL accessible externally on port 3306. Only host-based IP restrictions as access control — bypassable in spoofing or pivot scenarios.</div>
+      </div>
+      <div class="vuln-card pending-card" style="animation-delay:.3s">
+        <div class="vuln-top"><span class="vuln-sev medium">MEDIUM</span><span class="vuln-status pending">PENDING</span></div>
+        <div class="vuln-name">Slowloris DoS</div>
+        <div class="vuln-cve">CVE-2007-6750</div>
+        <div class="vuln-host">10.0.0.23 · Elasticsearch</div>
+        <div class="vuln-desc">Elasticsearch vulnerable to Slowloris attack. Can be used for denial of service by holding HTTP connections partially open indefinitely.</div>
+      </div>
+    </div>
+    <div class="section-header">
+      <div class="section-title">Tools Used</div>
+      <div class="section-line"></div>
+      <div class="section-badge red-badge">ARSENAL</div>
+    </div>
+    <div class="tools-grid">
+      <div class="tool-card" style="animation-delay:.05s"><div class="tool-icon recon">🔍</div><div><div class="tool-name">nmap</div><div class="tool-desc">Recon · Port scan · Vuln scripts</div></div></div>
+      <div class="tool-card" style="animation-delay:.08s"><div class="tool-icon enum">📂</div><div><div class="tool-name">gobuster</div><div class="tool-desc">Dir enumeration · cgi-bin discovery</div></div></div>
+      <div class="tool-card" style="animation-delay:.11s"><div class="tool-icon enum">🖧</div><div><div class="tool-name">nbtscan</div><div class="tool-desc">NetBIOS enumeration · /24 scan</div></div></div>
+      <div class="tool-card" style="animation-delay:.14s"><div class="tool-icon exploit">🎯</div><div><div class="tool-name">FTP client</div><div class="tool-desc">Anonymous login · file exfil</div></div></div>
+      <div class="tool-card" style="animation-delay:.17s"><div class="tool-icon crack">🔑</div><div><div class="tool-name">CrackStation</div><div class="tool-desc">NTLM/SHA1 hash cracking</div></div></div>
+      <div class="tool-card" style="animation-delay:.2s"><div class="tool-icon rdp">🖥️</div><div><div class="tool-name">xfreerdp</div><div class="tool-desc">RDP access · lateral movement</div></div></div>
+      <div class="tool-card" style="animation-delay:.23s"><div class="tool-icon post">💾</div><div><div class="tool-name">comsvcs.dll</div><div class="tool-desc">LSASS dump via rundll32</div></div></div>
+      <div class="tool-card" style="animation-delay:.26s"><div class="tool-icon post">🔓</div><div><div class="tool-name">pypykatz</div><div class="tool-desc">LSASS minidump parsing · creds</div></div></div>
+      <div class="tool-card" style="animation-delay:.29s"><div class="tool-icon exploit">🐍</div><div><div class="tool-name">exploit.py</div><div class="tool-desc">CVE-2021-41773 · Apache RCE</div></div></div>
+      <div class="tool-card" style="animation-delay:.32s"><div class="tool-icon enum">🔗</div><div><div class="tool-name">smbclient</div><div class="tool-desc">SMB shares · lsass.dmp transfer</div></div></div>
+    </div>
+    <div class="section-header">
+      <div class="section-title">MITRE ATT&CK — Techniques Used</div>
+      <div class="section-line"></div>
+      <div class="section-badge red-badge">7 TECHNIQUES</div>
+    </div>
+    <div class="mitre-grid">
+      <div class="mitre-card"><div class="mitre-phase red">Initial Access</div><div class="mitre-technique">Valid Accounts</div><div class="mitre-id">T1078</div><div class="mitre-detail"><strong class="red">Used:</strong> Cracked Admin credentials from FTP hash used for RDP on 10.0.0.119 and subsequently on DC.</div></div>
+      <div class="mitre-card"><div class="mitre-phase red">Initial Access</div><div class="mitre-technique">Exploit Public-Facing App</div><div class="mitre-id">T1190</div><div class="mitre-detail"><strong class="red">Used:</strong> CVE-2021-41773 exploited on Apache 2.4.49 of 10.0.0.56. RCE obtained as daemon via Python script.</div></div>
+      <div class="mitre-card"><div class="mitre-phase red">Credential Access</div><div class="mitre-technique">OS Credential Dumping</div><div class="mitre-id">T1003</div><div class="mitre-detail"><strong class="red">Used:</strong> LSASS dump via rundll32/comsvcs.dll. Processed with pypykatz to extract NTLM hashes and Kerberos keys.</div></div>
+      <div class="mitre-card"><div class="mitre-phase red">Lateral Movement</div><div class="mitre-technique">Remote Services (RDP)</div><div class="mitre-id">T1021.001</div><div class="mitre-detail"><strong class="red">Used:</strong> xfreerdp to move from kali → 10.0.0.119 → 10.0.0.83 using obtained credentials at each step.</div></div>
+      <div class="mitre-card"><div class="mitre-phase red">Lateral Movement</div><div class="mitre-technique">SMB/Admin Shares</div><div class="mitre-id">T1021.002</div><div class="mitre-detail"><strong class="red">Used:</strong> smbclient to exfil lsass.dmp from 10.0.0.40\dump to attacker host 10.0.0.219.</div></div>
+      <div class="mitre-card"><div class="mitre-phase red">Privilege Escalation</div><div class="mitre-technique">Abuse Elevation Control</div><div class="mitre-id">T1548</div><div class="mitre-detail"><strong class="red">Used:</strong> SeDebugPrivilege available on local admin to access LSASS process and extract memory credentials.</div></div>
+      <div class="mitre-card"><div class="mitre-phase red">Discovery</div><div class="mitre-technique">Network Service Scanning</div><div class="mitre-id">T1046</div><div class="mitre-detail"><strong class="red">Used:</strong> Nmap -A -sV and --script vuln to map services, versions and vulnerabilities across all 9 hosts in /24.</div></div>
+    </div>
+    <div class="footer">
+      <div class="footer-left">ICC-003 · THE BUGS · Purple Team · 2026-02-22 · CyberCore Solution</div>
+      <div class="footer-right">
+        <div class="footer-stat"><div class="val" style="color:var(--red)">5</div><div class="lbl">STEPS</div></div>
+        <div class="footer-stat"><div class="val" style="color:var(--orange)">7</div><div class="lbl">CREDENTIALS</div></div>
+        <div class="footer-stat"><div class="val" style="color:var(--purple)">DA</div><div class="lbl">PRIVILEGE</div></div>
+      </div>
+    </div>
+  </div>
+</main>
+</div>
+<script>
+function updateClock() {
+  const utc = new Date().toUTCString().split(' ')[4];
+  document.getElementById('clock').textContent = utc + ' UTC';
+}
+updateClock(); setInterval(updateClock, 1000);
+function switchTeam(team) {
+  const body = document.body;
+  const blueBtn = document.getElementById('blue-btn');
+  const redBtn = document.getElementById('red-btn');
+  const bluePanel = document.getElementById('panel-blue');
+  const redPanel = document.getElementById('panel-red');
+  const icon = document.getElementById('topbar-icon');
+  const title = document.getElementById('topbar-title');
+  const liveDot = document.getElementById('live-dot');
+  const liveText = document.getElementById('live-text');
+  if (team === 'red') {
+    body.classList.add('red-mode');
+    blueBtn.classList.remove('active');
+    redBtn.classList.add('active');
+    bluePanel.classList.remove('active');
+    redPanel.classList.add('active');
+    icon.textContent = '⚔️';
+    title.textContent = 'RED TEAM — OPERATION REPORT';
+    liveText.textContent = 'OP COMPLETE';
+  } else {
+    body.classList.remove('red-mode');
+    redBtn.classList.remove('active');
+    blueBtn.classList.add('active');
+    redPanel.classList.remove('active');
+    bluePanel.classList.add('active');
+    icon.textContent = '🛡️';
+    title.textContent = 'BLUE TEAM — IR DASHBOARD';
+    liveText.textContent = 'ACTIVE INCIDENT';
+  }
+}
+const TOTAL = 12;
+function toggleTask(el) {
+  el.classList.toggle('done');
+  updateProgress();
+}
+function updateProgress() {
+  const done = document.querySelectorAll('#task-list .task-item.done').length;
+  document.getElementById('done-count').textContent = done;
+  document.getElementById('done-sub').textContent = `of ${TOTAL} total`;
+  document.getElementById('progress-text').textContent = `${done} / ${TOTAL}`;
+  document.getElementById('progress-bar').style.width = Math.round((done/TOTAL)*100) + '%';
+}
+function showTab(phase, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  if (phase === 'all') {
+    document.getElementById('tab-all').classList.add('active');
+  } else {
+    const panel = document.getElementById('tab-' + phase);
+    panel.innerHTML = '';
+    const items = document.querySelectorAll(`#task-list .task-item[data-phase="${phase}"]`);
+    if (!items.length) {
+      panel.innerHTML = '<p style="font-family:var(--mono);font-size:12px;color:var(--text-faint);padding:20px;">No tasks in this phase.</p>';
+    } else {
+      items.forEach((item, i) => {
+        const clone = item.cloneNode(true);
+        clone.addEventListener('click', function() {
+          const origItems = Array.from(document.querySelectorAll('#task-list .task-item')).filter(x => x.dataset.phase === phase);
+          const clones = Array.from(panel.querySelectorAll('.task-item'));
+          const idx = clones.indexOf(this);
+          this.classList.toggle('done');
+          if (origItems[idx]) origItems[idx].classList.toggle('done');
+          updateProgress();
+        });
+        panel.appendChild(clone);
+      });
+    }
+    panel.classList.add('active');
+  }
+}
+</script>
+</body>
+</html>
